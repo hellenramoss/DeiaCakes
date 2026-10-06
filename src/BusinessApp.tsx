@@ -19,6 +19,7 @@ import {
 import { formatCurrency, formatCurrencyInput, parseCurrencyInput } from "./lib/currency";
 import { hasSupabase, supabase } from "./lib/supabase";
 import { loadData, removeOrder, saveCustomer, saveOrder, saveProduct } from "./lib/storage";
+import AppLoader from "./components/AppLoader";
 import {
   Customer,
   Order,
@@ -85,7 +86,7 @@ function badgeClass(value: string) {
   return "badge danger";
 }
 
-export default function App() {
+export default function App({ logoSrc }: { logoSrc?: string }) {
   const [tab, setTab] = useState<Tab>("inicio");
   const [products, setProducts] = useState<Product[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -99,6 +100,7 @@ export default function App() {
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const [loaderMessage, setLoaderMessage] = useState<string | null>(null);
 
   async function refresh() {
     setLoading(true);
@@ -149,48 +151,73 @@ export default function App() {
   }
 
   async function handleProductSave(product: Product) {
-    await saveProduct(product);
-    await refresh();
-    setProductModal(false);
-    setEditingProduct(null);
-    notify("Produto salvo.");
+    setLoaderMessage("Salvando produto...");
+    try {
+      await saveProduct(product);
+      await refresh();
+      setProductModal(false);
+      setEditingProduct(null);
+      notify("Produto salvo.");
+    } finally {
+      setLoaderMessage(null);
+    }
   }
 
   async function handleCustomerSave(customer: Customer) {
-    await saveCustomer(customer);
-    await refresh();
-    setCustomerModal(false);
-    setEditingCustomer(null);
-    notify("Cliente salvo.");
+    setLoaderMessage("Salvando cliente...");
+    try {
+      await saveCustomer(customer);
+      await refresh();
+      setCustomerModal(false);
+      setEditingCustomer(null);
+      notify("Cliente salvo.");
+    } finally {
+      setLoaderMessage(null);
+    }
   }
 
   async function handleOrderSave(order: Order) {
-    const normalized = { ...order, paymentStatus: paymentStatusFrom(order) };
-    await saveOrder(normalized);
-    await refresh();
-    setOrderModal(false);
-    setEditingOrder(null);
-    notify("Pedido salvo.");
+    setLoaderMessage("Salvando pedido...");
+    try {
+      const normalized = { ...order, paymentStatus: paymentStatusFrom(order) };
+      await saveOrder(normalized);
+      await refresh();
+      setOrderModal(false);
+      setEditingOrder(null);
+      notify("Pedido salvo.");
+    } finally {
+      setLoaderMessage(null);
+    }
   }
 
   async function handlePaymentSave(order: Order, payment: Payment) {
-    const updated = {
-      ...order,
-      payments: [...order.payments, payment]
-    };
-    updated.paymentStatus = paymentStatusFrom(updated);
+    setLoaderMessage("Registrando pagamento...");
+    try {
+      const updated = {
+        ...order,
+        payments: [...order.payments, payment]
+      };
+      updated.paymentStatus = paymentStatusFrom(updated);
 
-    await saveOrder(updated);
-    await refresh();
-    setPaymentOrder(null);
-    notify("Pagamento registrado.");
+      await saveOrder(updated);
+      await refresh();
+      setPaymentOrder(null);
+      notify("Pagamento registrado.");
+    } finally {
+      setLoaderMessage(null);
+    }
   }
 
   async function handleDeleteOrder(order: Order) {
     if (!window.confirm(`Excluir o pedido de ${order.customerName}?`)) return;
-    await removeOrder(order.id);
-    await refresh();
-    notify("Pedido excluído.");
+    setLoaderMessage("Excluindo pedido...");
+    try {
+      await removeOrder(order.id);
+      await refresh();
+      notify("Pedido excluído.");
+    } finally {
+      setLoaderMessage(null);
+    }
   }
 
   const currentMonth = isoToday().slice(0, 7);
@@ -220,6 +247,7 @@ export default function App() {
 
   return (
     <div className="app-shell">
+      {loaderMessage && <AppLoader message={loaderMessage} logoSrc={logoSrc} />}
       <aside className="sidebar">
         <div className="brand">
           <div className="brand-mark">D</div>
@@ -263,7 +291,7 @@ export default function App() {
         </header>
 
         {loading ? (
-          <div className="loading">Carregando...</div>
+          <AppLoader message="Atualizando dados..." logoSrc={logoSrc} />
         ) : (
           <>
             {tab === "inicio" && (
