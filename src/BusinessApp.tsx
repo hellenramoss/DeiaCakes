@@ -112,6 +112,7 @@ export default function App() {
 
   useEffect(() => {
     if (!supabase) return;
+    const client = supabase;
 
     let refreshTimer = 0;
     const scheduleRefresh = () => {
@@ -119,7 +120,7 @@ export default function App() {
       refreshTimer = window.setTimeout(() => refresh(), 180);
     };
 
-    const channel = supabase
+    const channel = client
       .channel("deia-cakes-data-sync")
       .on("postgres_changes", { event: "*", schema: "public", table: "products" }, scheduleRefresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "customers" }, scheduleRefresh)
@@ -130,7 +131,7 @@ export default function App() {
 
     return () => {
       window.clearTimeout(refreshTimer);
-      supabase.removeChannel(channel);
+      client.removeChannel(channel);
     };
   }, []);
 
