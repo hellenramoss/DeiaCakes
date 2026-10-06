@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Camera, LogOut, Settings, ShieldCheck, UserRound, UsersRound, X } from "lucide-react";
 import BusinessApp from "./BusinessApp";
+import AppLoader from "./components/AppLoader";
 import {
   fileToDataUrl,
   getSession,
@@ -146,7 +147,7 @@ export default function App() {
   }, [settings]);
 
   if (session === undefined || loadingProfile) {
-    return <div className="auth-loading">Carregando Déia Cake Ateliê...</div>;
+    return <AppLoader message={loadingProfile ? "Preparando seu perfil..." : "Carregando Déia Cake Ateliê..."} logoSrc={settings.logoDataUrl || defaultLogo} />;
   }
 
   if (!session) {
@@ -161,7 +162,7 @@ export default function App() {
   }
 
   if (!profile) {
-    return <div className="auth-loading">Preparando seu perfil...</div>;
+    return <AppLoader message="Preparando seu perfil..." logoSrc={settings.logoDataUrl || defaultLogo} />;
   }
 
   if (!profile.isActive) {
@@ -179,7 +180,7 @@ export default function App() {
 
   return (
     <div className="customized-app" style={shellStyle}>
-      <BusinessApp />
+      <BusinessApp logoSrc={settings.logoDataUrl || defaultLogo} />
 
       <button className="account-fab" onClick={() => setAccountOpen(true)} aria-label="Minha conta">
         {profile.avatarDataUrl ? (
@@ -255,6 +256,7 @@ function AuthScreen({
 
   return (
     <div className="auth-page">
+      {busy && <AppLoader message={mode === "login" ? "Entrando..." : "Criando usuário..."} logoSrc={settings.logoDataUrl || defaultLogo} />}
       <div className="auth-card">
         <BrandHeader settings={settings} />
 
@@ -414,6 +416,7 @@ function ProfileEditor({
 
   return (
     <div className="settings-section">
+      {busy && <AppLoader message="Salvando perfil..." />}
       <h2>Meu perfil</h2>
       <p>Essa foto aparece no botão da sua conta.</p>
 
@@ -476,6 +479,7 @@ function AppearanceEditor({
 
   return (
     <div className="settings-section">
+      {busy && <AppLoader message="Salvando aparência..." logoSrc={draft.logoDataUrl || defaultLogo} />}
       <h2>Aparência do app</h2>
       <p>Logo, ícone da PWA e fundo podem ser trocados daqui.</p>
 
@@ -561,6 +565,7 @@ function UsersEditor({ currentUserId }: { currentUserId: string }) {
 
   return (
     <div className="settings-section">
+      {busyId && <AppLoader message="Atualizando usuário..." />}
       <h2>Usuários</h2>
       <p>Controle quem entra no app e quem pode alterar configurações.</p>
 
