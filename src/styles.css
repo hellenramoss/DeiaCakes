@@ -1731,3 +1731,39 @@ textarea:focus-visible {
   cursor: pointer;
   padding: 0 2px;
 }
+
+
+.product-card-button {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+}
+
+.product-card-button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(154, 93, 71, 0.28);
+}
+
+.product-active-toggle {
+  display: flex !important;
+  grid-template-columns: none !important;
+  align-items: center;
+  gap: 9px !important;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--surface-soft);
+}
+
+.product-active-toggle input {
+  width: 18px !important;
+  height: 18px;
+  min-height: auto !important;
+  padding: 0 !important;
+}
+
+.product-active-toggle span {
+  color: var(--text) !important;
+}
