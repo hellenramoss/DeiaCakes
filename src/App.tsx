@@ -30,6 +30,9 @@ export default function App() {
   });
   const [accountOpen, setAccountOpen] = useState(false);
   const [loadingProfile, setLoadingProfile] = useState(false);
+  const [emailConfirmed, setEmailConfirmed] = useState(
+    new URLSearchParams(window.location.search).get("email_confirmed") === "1"
+  );
 
   async function refreshSession() {
     const current = await getSession();
@@ -59,6 +62,14 @@ export default function App() {
     refreshSettings();
     return onAuthChange(refreshSession);
   }, []);
+
+  useEffect(() => {
+    if (!emailConfirmed) return;
+
+    const url = new URL(window.location.href);
+    url.searchParams.delete("email_confirmed");
+    window.history.replaceState({}, "", url.pathname + url.search + url.hash);
+  }, [emailConfirmed]);
 
   useEffect(() => {
     const logo = settings.logoDataUrl || defaultLogo;
@@ -112,7 +123,14 @@ export default function App() {
   }
 
   if (!session) {
-    return <AuthScreen settings={settings} onAuthenticated={refreshSession} />;
+    return (
+      <AuthScreen
+        settings={settings}
+        onAuthenticated={refreshSession}
+        emailConfirmed={emailConfirmed}
+        onDismissConfirmation={() => setEmailConfirmed(false)}
+      />
+    );
   }
 
   if (!profile) {
@@ -171,10 +189,14 @@ function BrandHeader({ settings }: { settings: AppSettings }) {
 
 function AuthScreen({
   settings,
-  onAuthenticated
+  onAuthenticated,
+  emailConfirmed,
+  onDismissConfirmation
 }: {
   settings: AppSettings;
   onAuthenticated: () => Promise<void>;
+  emailConfirmed: boolean;
+  onDismissConfirmation: () => void;
 }) {
   const [mode, setMode] = useState<"login" | "register">("login");
   const [name, setName] = useState("");
@@ -208,6 +230,16 @@ function AuthScreen({
     <div className="auth-page">
       <div className="auth-card">
         <BrandHeader settings={settings} />
+
+        {emailConfirmed && (
+          <div className="confirmation-banner">
+            <div>
+              <strong>E-mail confirmado ✓</strong>
+              <span>Seu acesso foi confirmado. Agora é só entrar.</span>
+            </div>
+            <button type="button" onClick={onDismissConfirmation} aria-label="Fechar">×</button>
+          </div>
+        )}
 
         <div className="auth-copy">
           <h1>{mode === "login" ? "Entrar" : "Criar usuário"}</h1>
