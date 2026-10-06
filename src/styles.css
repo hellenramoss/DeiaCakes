@@ -2422,3 +2422,64 @@ section,
     width: 1%;
   }
 }
+
+
+.payment-fields-grid {
+  width: 100%;
+  max-width: 100%;
+}
+
+.payment-fields-grid .payment-date-field {
+  width: 100%;
+  min-width: 0;
+}
+
+.payment-fields-grid .payment-date-field > span {
+  width: 100%;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 580px) {
+  .payment-fields-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: 10px;
+  }
+
+  .payment-fields-grid > label {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .payment-fields-grid .money-input,
+  .payment-fields-grid .payment-date-field {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .payment-fields-grid .money-input {
+    overflow: hidden;
+  }
+
+  .payment-fields-grid .money-input > span {
+    flex: 0 0 auto;
+  }
+
+  .payment-fields-grid .money-input input {
+    flex: 1 1 0;
+    min-width: 0;
+    width: 0;
+  }
+
+  .payment-fields-grid .payment-date-field {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  .payment-fields-grid .payment-date-field > span {
+    font-size: 13px;
+    white-space: nowrap;
+  }
+}
