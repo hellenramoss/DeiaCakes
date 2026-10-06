@@ -10,18 +10,18 @@ export default defineConfig({
       registerType: "autoUpdate",
       includeAssets: [],
       manifest: {
-        name: "Deia Cakes",
-        short_name: "Deia Cakes",
+        name: "Déia Cake Ateliê",
+        short_name: "Déia Cake",
         description: "Controle de pedidos, clientes, pagamentos e produção",
-        theme_color: "#8a3f62",
-        background_color: "#fffaf7",
+        theme_color: "#9a5d47",
+        background_color: "#fff9f1",
         display: "standalone",
         start_url: "/DeiaCakes/",
         icons: [
           {
-            src: "icon.svg",
-            sizes: "any",
-            type: "image/svg+xml",
+            src: "deia-logo.webp",
+            sizes: "256x256",
+            type: "image/webp",
             purpose: "any"
           }
         ]
