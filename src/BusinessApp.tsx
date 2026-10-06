@@ -1447,7 +1447,10 @@ function PaymentModal({
 
           <label>
             <span>Data</span>
-            <input type="date" value={paidAt} onChange={(event) => setPaidAt(event.target.value)} required />
+            <div className="compact-date-field payment-date-field">
+              <span>{formatDate(paidAt)}</span>
+              <input type="date" value={paidAt} onChange={(event) => setPaidAt(event.target.value)} required />
+            </div>
           </label>
 
           <label className="payment-method-field">
