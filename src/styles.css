@@ -2290,3 +2290,56 @@ section,
     min-width: 0;
   }
 }
+
+
+@media (max-width: 580px) {
+  .payment-summary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .payment-summary > div {
+    min-width: 0;
+    padding: 11px 10px;
+    border-right: 1px solid var(--line);
+    border-bottom: 0;
+  }
+
+  .payment-summary > div:last-child {
+    border-right: 0;
+  }
+
+  .payment-summary span {
+    font-size: 10px;
+  }
+
+  .payment-summary strong {
+    font-size: 14px;
+    white-space: nowrap;
+  }
+
+  .payment-summary .due strong {
+    font-size: 15px;
+  }
+
+  .money-input:focus-within {
+    outline: 3px solid rgba(138, 63, 98, 0.18);
+    outline-offset: 2px;
+  }
+
+  .money-input input:focus-visible {
+    outline: 0;
+  }
+
+  .payment-summary + label .money-input {
+    overflow: visible;
+  }
+
+  .payment-summary + label .money-input > span {
+    flex: 0 0 auto;
+  }
+
+  .payment-summary + label .money-input input {
+    flex: 1 1 auto;
+    width: 1%;
+  }
+}
