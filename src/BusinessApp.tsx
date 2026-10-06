@@ -1138,17 +1138,32 @@ function OrderModal({
         {customers.length === 0 && <div className="form-hint">Cadastre um cliente antes de criar o primeiro pedido.</div>}
 
         <div className="order-date-grid">
-          <label><span>Data do pedido</span><input type="date" value={orderDate} onChange={(event) => setOrderDate(event.target.value)} required /></label>
-          <label><span>Data de entrega</span><input type="date" value={deliveryDate} onChange={(event) => setDeliveryDate(event.target.value)} required /></label>
-          <label><span>Data pgto. pretendida</span><input type="date" value={expectedPaymentDate} onChange={(event) => setExpectedPaymentDate(event.target.value)} /></label>
+          <label>
+            <span>Data do pedido</span>
+            <div className="compact-date-field">
+              <span>{formatDate(orderDate)}</span>
+              <input type="date" value={orderDate} onChange={(event) => setOrderDate(event.target.value)} required />
+            </div>
+          </label>
+          <label>
+            <span>Data de entrega</span>
+            <div className="compact-date-field">
+              <span>{formatDate(deliveryDate)}</span>
+              <input type="date" value={deliveryDate} onChange={(event) => setDeliveryDate(event.target.value)} required />
+            </div>
+          </label>
+          <label>
+            <span>Data pgto. pretendida</span>
+            <div className="compact-date-field">
+              <span>{expectedPaymentDate ? formatDate(expectedPaymentDate) : "Selecionar"}</span>
+              <input type="date" value={expectedPaymentDate} onChange={(event) => setExpectedPaymentDate(event.target.value)} />
+            </div>
+          </label>
           <label>
             <span>Data pgto. real</span>
-            <input
-              type="text"
-              value={order && actualPaymentDate(order) ? formatDate(actualPaymentDate(order)) : "Ainda não pago"}
-              readOnly
-              className="readonly-date"
-            />
+            <div className="readonly-date compact-date-display">
+              {order && actualPaymentDate(order) ? formatDate(actualPaymentDate(order)) : "Ainda não pago"}
+            </div>
           </label>
         </div>
 
