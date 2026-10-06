@@ -65,6 +65,7 @@ function mapOrderRow(row: any, items: any[], payments: any[]): Order {
     customerName: row.customer_name,
     orderDate: row.order_date,
     deliveryDate: row.delivery_date,
+    expectedPaymentDate: row.expected_payment_date ?? "",
     status: row.status,
     paymentStatus: row.payment_status,
     notes: row.notes ?? "",
@@ -183,6 +184,7 @@ export async function saveOrder(order: Order) {
     customer_name: order.customerName,
     order_date: order.orderDate,
     delivery_date: order.deliveryDate,
+    expected_payment_date: order.expectedPaymentDate || null,
     status: order.status,
     payment_status: order.paymentStatus,
     notes: order.notes
