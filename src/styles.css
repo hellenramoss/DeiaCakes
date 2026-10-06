@@ -1780,3 +1780,28 @@ textarea:focus-visible {
   transform: translateY(-1px);
   border-color: rgba(154, 93, 71, 0.28);
 }
+
+
+.order-date-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.readonly-date {
+  background: var(--surface-soft) !important;
+  color: var(--muted) !important;
+}
+
+@media (max-width: 580px) {
+  .order-date-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .order-date-grid input {
+    font-size: 14px;
+    padding-left: 9px;
+    padding-right: 9px;
+  }
+}
