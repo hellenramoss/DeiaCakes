@@ -2343,3 +2343,36 @@ section,
     width: 1%;
   }
 }
+
+
+.notification-status {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 13px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-soft);
+}
+
+.notification-status.active {
+  border-color: rgba(55, 116, 93, 0.2);
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.notification-status div {
+  min-width: 0;
+}
+
+.notification-status strong,
+.notification-status span {
+  display: block;
+}
+
+.notification-status span {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
