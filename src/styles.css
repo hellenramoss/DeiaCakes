@@ -1820,3 +1820,53 @@ textarea:focus-visible {
     padding-right: 8px;
   }
 }
+
+
+.compact-date-field,
+.compact-date-display {
+  position: relative;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: white;
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  overflow: hidden;
+}
+
+.compact-date-field > span,
+.compact-date-display {
+  font-size: 14px;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.compact-date-field input[type="date"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.readonly-date.compact-date-display {
+  background: var(--surface-soft);
+  color: var(--muted);
+}
+
+@media (max-width: 580px) {
+  .compact-date-field,
+  .compact-date-display {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .compact-date-field > span,
+  .compact-date-display {
+    font-size: 13px;
+  }
+}
