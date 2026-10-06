@@ -16,6 +16,7 @@ export default defineConfig({
         theme_color: "#9a5d47",
         background_color: "#fff9f1",
         display: "standalone",
+        id: "/DeiaCakes/",
         start_url: "/DeiaCakes/",
         icons: [
           {
