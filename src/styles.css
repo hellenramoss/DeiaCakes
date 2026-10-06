@@ -2094,3 +2094,132 @@ textarea:focus-visible {
     opacity: .35;
   }
 }
+
+
+.offline-banner {
+  margin: 0 0 16px;
+  padding: 11px 14px;
+  border: 1px solid #e7c997;
+  border-radius: 12px;
+  background: #fff7e7;
+  color: #7b5728;
+  font-size: 12px;
+  line-height: 1.45;
+  font-weight: 650;
+}
+
+.history-section {
+  margin-top: 4px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 12px;
+}
+
+.history-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.history-title strong {
+  font-size: 14px;
+}
+
+.history-title span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.history-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.history-stats > div {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--surface-soft);
+}
+
+.history-stats span,
+.history-stats strong {
+  display: block;
+}
+
+.history-stats span {
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.25;
+  margin-bottom: 4px;
+}
+
+.history-stats strong {
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.history-list {
+  display: grid;
+  gap: 7px;
+}
+
+.history-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 11px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: white;
+}
+
+.history-row > div:first-child {
+  min-width: 0;
+}
+
+.history-row strong,
+.history-row span {
+  display: block;
+}
+
+.history-row > div:first-child > span {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.history-row > span {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 11px;
+  text-align: right;
+}
+
+.history-row-value {
+  flex: 0 0 auto;
+  text-align: right;
+}
+
+.history-row-value > strong {
+  margin-bottom: 5px;
+  font-size: 12px;
+}
+
+@media (max-width: 520px) {
+  .history-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .history-row {
+    align-items: flex-start;
+  }
+}
