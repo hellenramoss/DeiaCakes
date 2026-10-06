@@ -1285,14 +1285,18 @@ function OrderModal({
   const [status, setStatus] = useState<OrderStatus>(order?.status ?? "Encomendado");
   const [notes, setNotes] = useState(order?.notes ?? "");
   const [items, setItems] = useState<OrderItem[]>(order?.items ?? []);
+  const [priceInputs, setPriceInputs] = useState<Record<string, string>>(() =>
+    Object.fromEntries((order?.items ?? []).map((item) => [item.id, formatCurrencyInput(item.unitPrice)]))
+  );
   const [saving, setSaving] = useState(false);
 
   function addItem() {
     const first = products.find((product) => product.active);
     if (!first) return;
+    const id = uid();
     setItems((current) => [
       {
-        id: uid(),
+        id,
         productId: first.id,
         productName: first.name,
         quantity: 1,
@@ -1300,6 +1304,7 @@ function OrderModal({
       },
       ...current
     ]);
+    setPriceInputs((current) => ({ ...current, [id]: formatCurrencyInput(first.price) }));
   }
 
   function changeProduct(itemId: string, productId: string) {
@@ -1313,6 +1318,7 @@ function OrderModal({
           : item
       )
     );
+    setPriceInputs((current) => ({ ...current, [itemId]: formatCurrencyInput(product.price) }));
   }
 
   function updateItem(itemId: string, changes: Partial<OrderItem>) {
@@ -1321,6 +1327,11 @@ function OrderModal({
 
   function deleteItem(itemId: string) {
     setItems((current) => current.filter((item) => item.id !== itemId));
+    setPriceInputs((current) => {
+      const next = { ...current };
+      delete next[itemId];
+      return next;
+    });
   }
 
   async function submit(event: FormEvent) {
@@ -1417,7 +1428,13 @@ function OrderModal({
               }} onBlur={() => {
                 if (item.quantity < 1) updateItem(item.id, { quantity: 1 });
               }} /></label>
-              <label><span>Valor un.</span><div className="money-input compact-money"><span>R$</span><input inputMode="decimal" value={formatCurrencyInput(item.unitPrice)} onChange={(event) => updateItem(item.id, { unitPrice: parseCurrencyInput(event.target.value) })} /></div></label>
+              <label><span>Valor un.</span><div className="money-input compact-money"><span>R$</span><input inputMode="decimal" value={priceInputs[item.id] ?? ""} onFocus={(event) => event.currentTarget.select()} onChange={(event) => {
+                const value = event.target.value;
+                setPriceInputs((current) => ({ ...current, [item.id]: value }));
+                updateItem(item.id, { unitPrice: parseCurrencyInput(value) });
+              }} onBlur={() => {
+                setPriceInputs((current) => ({ ...current, [item.id]: formatCurrencyInput(item.unitPrice) }));
+              }} /></div></label>
               <button type="button" className="icon-button danger-button" onClick={() => deleteItem(item.id)}><Trash2 size={17} /></button>
             </div>
           ))}
