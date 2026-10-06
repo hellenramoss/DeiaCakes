@@ -170,8 +170,8 @@ export default function App() {
       <div className="auth-page" style={shellStyle}>
         <div className="auth-card compact-auth">
           <BrandHeader settings={settings} />
-          <h2>Acesso desativado</h2>
-          <p>Este usuário está cadastrado, mas o acesso foi desativado por um administrador.</p>
+          <h2>Aguardando aprovação</h2>
+          <p>Seu cadastro existe, mas ainda precisa ser liberado por um administrador. Assim que for aprovado, o acesso entra automaticamente.</p>
           <button className="primary-button" onClick={signOut}>Sair</button>
         </div>
       </div>
@@ -244,7 +244,7 @@ function AuthScreen({
         await onAuthenticated();
       } else {
         await signUp(name.trim(), email.trim(), password);
-        setMessage("Cadastro criado. Se o Supabase pedir confirmação de e-mail, confirme antes de entrar.");
+        setMessage("Cadastro criado. Confirme seu e-mail e aguarde a aprovação de um administrador para acessar o app.");
         setMode("login");
       }
     } catch (error) {
