@@ -4,14 +4,15 @@ type AppLoaderProps = {
   overlay?: boolean;
 };
 
-const defaultLogo = "/DeiaCakes/deia-logo.webp";
+const defaultLogo = "/DeiaCakes/deia-logo-better.svg";
+const oldDefaultLogo = "/DeiaCakes/deia-logo.webp";
 
 export default function AppLoader({
   message = "Carregando Déia Cake Ateliê...",
   logoSrc,
   overlay = true
 }: AppLoaderProps) {
-  const logo = logoSrc || defaultLogo;
+  const logo = logoSrc && logoSrc !== oldDefaultLogo ? logoSrc : defaultLogo;
 
   return (
     <div className={overlay ? "brand-loader brand-loader-overlay" : "brand-loader"} role="status" aria-live="polite">
