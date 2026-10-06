@@ -17,7 +17,7 @@ import {
   X
 } from "lucide-react";
 import { formatCurrency, formatCurrencyInput, parseCurrencyInput } from "./lib/currency";
-import { hasSupabase } from "./lib/supabase";
+import { hasSupabase, supabase } from "./lib/supabase";
 import { loadData, removeOrder, saveCustomer, saveOrder, saveProduct } from "./lib/storage";
 import {
   Customer,
@@ -90,6 +90,7 @@ export default function App() {
   const [orderModal, setOrderModal] = useState(false);
   const [paymentOrder, setPaymentOrder] = useState<Order | null>(null);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
   async function refresh() {
     setLoading(true);
@@ -109,6 +110,30 @@ export default function App() {
     refresh();
   }, []);
 
+  useEffect(() => {
+    if (!supabase) return;
+
+    let refreshTimer = 0;
+    const scheduleRefresh = () => {
+      window.clearTimeout(refreshTimer);
+      refreshTimer = window.setTimeout(() => refresh(), 180);
+    };
+
+    const channel = supabase
+      .channel("deia-cakes-data-sync")
+      .on("postgres_changes", { event: "*", schema: "public", table: "products" }, scheduleRefresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "customers" }, scheduleRefresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, scheduleRefresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "order_items" }, scheduleRefresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "payments" }, scheduleRefresh)
+      .subscribe();
+
+    return () => {
+      window.clearTimeout(refreshTimer);
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   function notify(text: string) {
     setMessage(text);
     window.setTimeout(() => setMessage(""), 2800);
@@ -118,6 +143,7 @@ export default function App() {
     await saveProduct(product);
     await refresh();
     setProductModal(false);
+    setEditingProduct(null);
     notify("Produto salvo.");
   }
 
@@ -273,7 +299,14 @@ export default function App() {
               <ProductsView
                 products={products}
                 orders={orders}
-                onNew={() => setProductModal(true)}
+                onNew={() => {
+                  setEditingProduct(null);
+                  setProductModal(true);
+                }}
+                onEdit={(product) => {
+                  setEditingProduct(product);
+                  setProductModal(true);
+                }}
               />
             )}
 
@@ -304,7 +337,11 @@ export default function App() {
 
       {productModal && (
         <ProductModal
-          onClose={() => setProductModal(false)}
+          product={editingProduct}
+          onClose={() => {
+            setProductModal(false);
+            setEditingProduct(null);
+          }}
           onSave={handleProductSave}
         />
       )}
@@ -598,11 +635,13 @@ function CustomersView({
 function ProductsView({
   products,
   orders,
-  onNew
+  onNew,
+  onEdit
 }: {
   products: Product[];
   orders: Order[];
   onNew: () => void;
+  onEdit: (product: Product) => void;
 }) {
   const quantities = new Map<string, number>();
   orders
@@ -625,7 +664,7 @@ function ProductsView({
 
       <div className="cards-grid product-grid">
         {products.map((product) => (
-          <div className="product-card" key={product.id}>
+          <button className="product-card product-card-button" key={product.id} onClick={() => onEdit(product)}>
             <div className="product-icon"><ShoppingBag size={22} /></div>
             <div>
               <strong>{product.name}</strong>
@@ -636,7 +675,7 @@ function ProductsView({
               <span>Custo {formatCurrency(product.cost)}</span>
               <span>{quantities.get(product.id) ?? 0} vendidas</span>
             </div>
-          </div>
+          </button>
         ))}
       </div>
     </section>
@@ -863,16 +902,20 @@ function Modal({
 }
 
 function ProductModal({
+  product,
   onClose,
   onSave
 }: {
+  product: Product | null;
   onClose: () => void;
   onSave: (product: Product) => Promise<void>;
 }) {
-  const [name, setName] = useState("");
-  const [size, setSize] = useState("Média");
-  const [price, setPrice] = useState("");
-  const [cost, setCost] = useState("");
+  const [name, setName] = useState(product?.name ?? "");
+  const [category, setCategory] = useState(product?.category ?? "Outros");
+  const [size, setSize] = useState(product?.size ?? "Unidade");
+  const [price, setPrice] = useState(product ? formatCurrencyInput(product.price) : "");
+  const [cost, setCost] = useState(product ? formatCurrencyInput(product.cost) : "");
+  const [active, setActive] = useState(product?.active ?? true);
   const [saving, setSaving] = useState(false);
 
   async function submit(event: FormEvent) {
@@ -882,13 +925,13 @@ function ProductModal({
     setSaving(true);
     try {
       await onSave({
-        id: uid(),
+        id: product?.id ?? uid(),
         name: name.trim(),
-        category: "Outros",
+        category: category.trim() || "Outros",
         size: size.trim(),
         price: parseCurrencyInput(price),
         cost: parseCurrencyInput(cost),
-        active: true
+        active
       });
     } finally {
       setSaving(false);
@@ -896,15 +939,24 @@ function ProductModal({
   }
 
   return (
-    <Modal title="Novo produto" subtitle="Cadastre o preço em reais. Ex.: 65,00" onClose={onClose}>
+    <Modal
+      title={product ? "Editar produto" : "Novo produto"}
+      subtitle="Preço e custo em reais. Ex.: 30,00"
+      onClose={onClose}
+    >
       <form className="form" onSubmit={submit}>
-        <label><span>Produto</span><input value={name} onChange={(event) => setName(event.target.value)} placeholder="Torta de frango" autoFocus required /></label>
-        <label><span>Tamanho</span><input value={size} onChange={(event) => setSize(event.target.value)} placeholder="Média" /></label>
+        <label><span>Produto</span><input value={name} onChange={(event) => setName(event.target.value)} placeholder="Bolo de cenoura" autoFocus required /></label>
+        <label><span>Categoria</span><input value={category} onChange={(event) => setCategory(event.target.value)} placeholder="Bolos de cenoura" /></label>
+        <label><span>Tamanho / unidade</span><input value={size} onChange={(event) => setSize(event.target.value)} placeholder="Unidade" /></label>
         <div className="form-row">
           <label><span>Preço de venda</span><div className="money-input"><span>R$</span><input inputMode="decimal" value={price} onChange={(event) => setPrice(event.target.value)} placeholder="0,00" required /></div></label>
           <label><span>Custo estimado</span><div className="money-input"><span>R$</span><input inputMode="decimal" value={cost} onChange={(event) => setCost(event.target.value)} placeholder="0,00" /></div></label>
         </div>
-        <div className="form-actions"><button type="button" className="secondary-button" onClick={onClose}>Cancelar</button><button className="primary-button" disabled={saving}>{saving ? "Salvando..." : "Salvar produto"}</button></div>
+        <label className="product-active-toggle">
+          <input type="checkbox" checked={active} onChange={(event) => setActive(event.target.checked)} />
+          <span>Produto ativo para novos pedidos</span>
+        </label>
+        <div className="form-actions"><button type="button" className="secondary-button" onClick={onClose}>Cancelar</button><button className="primary-button" disabled={saving}>{saving ? "Salvando..." : product ? "Salvar alterações" : "Salvar produto"}</button></div>
       </form>
     </Modal>
   );
