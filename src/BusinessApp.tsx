@@ -1356,7 +1356,12 @@ function OrderModal({
               <select value={item.productId} onChange={(event) => changeProduct(item.id, event.target.value)}>
                 {products.filter((product) => product.active).map((product) => <option value={product.id} key={product.id}>{product.name} · {product.size}</option>)}
               </select>
-              <label><span>Qtd.</span><input type="number" min="1" value={item.quantity} onChange={(event) => updateItem(item.id, { quantity: Math.max(1, Number(event.target.value)) })} /></label>
+              <label><span>Qtd.</span><input type="number" min="1" value={item.quantity || ""} onChange={(event) => {
+                const value = event.target.value;
+                updateItem(item.id, { quantity: value === "" ? 0 : Math.max(0, Number(value)) });
+              }} onBlur={() => {
+                if (item.quantity < 1) updateItem(item.id, { quantity: 1 });
+              }} /></label>
               <label><span>Valor un.</span><div className="money-input compact-money"><span>R$</span><input inputMode="decimal" value={formatCurrencyInput(item.unitPrice)} onChange={(event) => updateItem(item.id, { unitPrice: parseCurrencyInput(event.target.value) })} /></div></label>
               <button type="button" className="icon-button danger-button" onClick={() => deleteItem(item.id)}><Trash2 size={17} /></button>
             </div>
