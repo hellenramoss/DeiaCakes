@@ -1436,11 +1436,26 @@ function PaymentModal({
           <div className="due"><span>Falta</span><strong>{formatCurrency(due)}</strong></div>
         </div>
 
-        <label><span>Valor recebido</span><div className="money-input"><span>R$</span><input autoFocus inputMode="decimal" value={amount} onChange={(event) => setAmount(event.target.value)} required /></div></label>
+        <div className="payment-fields-grid">
+          <label>
+            <span>Valor recebido</span>
+            <div className="money-input">
+              <span>R$</span>
+              <input autoFocus inputMode="decimal" value={amount} onChange={(event) => setAmount(event.target.value)} required />
+            </div>
+          </label>
 
-        <div className="form-row">
-          <label><span>Forma de pagamento</span><select value={method} onChange={(event) => setMethod(event.target.value as PaymentMethod)}>{paymentMethods.map((item) => <option key={item}>{item}</option>)}</select></label>
-          <label><span>Data</span><input type="date" value={paidAt} onChange={(event) => setPaidAt(event.target.value)} required /></label>
+          <label>
+            <span>Data</span>
+            <input type="date" value={paidAt} onChange={(event) => setPaidAt(event.target.value)} required />
+          </label>
+
+          <label className="payment-method-field">
+            <span>Forma de pagamento</span>
+            <select value={method} onChange={(event) => setMethod(event.target.value as PaymentMethod)}>
+              {paymentMethods.map((item) => <option key={item}>{item}</option>)}
+            </select>
+          </label>
         </div>
 
         <div className="form-actions"><button type="button" className="secondary-button" onClick={onClose}>Cancelar</button><button className="primary-button" disabled={saving}>{saving ? "Salvando..." : "Registrar pagamento"}</button></div>
