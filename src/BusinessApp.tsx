@@ -628,13 +628,15 @@ function OrdersView({
 }) {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("Todos");
+  const [paymentStatus, setPaymentStatus] = useState("Todos");
 
   const filtered = orders
     .filter((order) => {
       const matchesSearch = order.customerName.toLowerCase().includes(search.toLowerCase()) ||
         order.items.some((item) => item.productName.toLowerCase().includes(search.toLowerCase()));
       const matchesStatus = status === "Todos" || order.status === status;
-      return matchesSearch && matchesStatus;
+      const matchesPaymentStatus = paymentStatus === "Todos" || order.paymentStatus === paymentStatus;
+      return matchesSearch && matchesStatus && matchesPaymentStatus;
     })
     .sort((a, b) => b.deliveryDate.localeCompare(a.deliveryDate));
 
@@ -648,15 +650,23 @@ function OrdersView({
         onAction={onNew}
       />
 
-      <div className="toolbar">
+      <div className="toolbar orders-toolbar">
         <label className="search-box">
           <Search size={18} />
           <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar cliente ou produto" />
         </label>
-        <select value={status} onChange={(event) => setStatus(event.target.value)}>
-          <option>Todos</option>
-          {orderStatuses.map((item) => <option key={item}>{item}</option>)}
-        </select>
+        <div className="orders-filters">
+          <select aria-label="Status do pedido" value={status} onChange={(event) => setStatus(event.target.value)}>
+            <option>Todos</option>
+            {orderStatuses.map((item) => <option key={item}>{item}</option>)}
+          </select>
+          <select aria-label="Status do pagamento" value={paymentStatus} onChange={(event) => setPaymentStatus(event.target.value)}>
+            <option>Todos</option>
+            <option>Pendente</option>
+            <option>Parcial</option>
+            <option>Pago</option>
+          </select>
+        </div>
       </div>
 
       <div className="panel table-panel">
