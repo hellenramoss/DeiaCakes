@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { Camera, LogOut, Settings, ShieldCheck, UserRound, UsersRound, X } from "lucide-react";
+import { Bell, Camera, LogOut, Settings, ShieldCheck, UserRound, UsersRound, X } from "lucide-react";
 import BusinessApp from "./BusinessApp";
 import AppLoader from "./components/AppLoader";
 import {
@@ -18,6 +18,15 @@ import {
 } from "./lib/account";
 import { AppSettings, Profile } from "./types";
 import { supabase } from "./lib/supabase";
+import {
+  isStandaloneApp,
+  notificationPermission,
+  notificationsEnabled,
+  notificationsSupported,
+  requestNotificationPermission,
+  setNotificationsEnabled,
+  showAppNotification
+} from "./lib/notifications";
 
 const defaultLogo = "/DeiaCakes/deia-logo.webp";
 
@@ -328,7 +337,7 @@ function AccountPanel({
   onProfileChange: (profile: Profile) => void;
   onSettingsChange: (settings: AppSettings) => void;
 }) {
-  const [section, setSection] = useState<"profile" | "settings" | "users">("profile");
+  const [section, setSection] = useState<"profile" | "notifications" | "settings" | "users">("profile");
 
   return (
     <div className="account-backdrop" onMouseDown={onClose}>
@@ -350,6 +359,9 @@ function AccountPanel({
           <button className={section === "profile" ? "active" : ""} onClick={() => setSection("profile")}>
             <UserRound size={17} /> Meu perfil
           </button>
+          <button className={section === "notifications" ? "active" : ""} onClick={() => setSection("notifications")}>
+            <Bell size={17} /> Notificações
+          </button>
           {profile.role === "admin" && (
             <>
               <button className={section === "settings" ? "active" : ""} onClick={() => setSection("settings")}>
@@ -365,6 +377,9 @@ function AccountPanel({
         <div className="account-content">
           {section === "profile" && (
             <ProfileEditor profile={profile} onChange={onProfileChange} />
+          )}
+          {section === "notifications" && (
+            <NotificationsEditor />
           )}
           {section === "settings" && profile.role === "admin" && (
             <AppearanceEditor settings={settings} onChange={onSettingsChange} />
@@ -440,6 +455,89 @@ function ProfileEditor({
 
       {message && <div className="inline-message">{message}</div>}
       <button className="primary-button" onClick={save} disabled={busy}>{busy ? "Salvando..." : "Salvar perfil"}</button>
+    </div>
+  );
+}
+
+function NotificationsEditor() {
+  const [enabled, setEnabled] = useState(notificationsEnabled());
+  const [permission, setPermission] = useState(notificationPermission());
+  const [message, setMessage] = useState("");
+
+  async function enable() {
+    setNotificationsEnabled(true);
+    setEnabled(true);
+
+    if (!notificationsSupported()) {
+      setMessage("Este navegador não oferece suporte a notificações.");
+      return;
+    }
+
+    if (!isStandaloneApp() && /iPhone|iPad|iPod/.test(navigator.userAgent)) {
+      setMessage("No iPhone, instale o app na Tela de Início antes de ativar as notificações.");
+      return;
+    }
+
+    const result = await requestNotificationPermission();
+    setPermission(result);
+
+    if (result === "granted") {
+      setMessage("Notificações ativadas.");
+      await showAppNotification(
+        "Déia Cake Ateliê",
+        "Pronto! As notificações estão ativadas.",
+        "notifications-enabled"
+      );
+    } else if (result === "denied") {
+      setMessage("As notificações foram bloqueadas pelo sistema. É preciso liberá-las nas configurações do aparelho.");
+    } else {
+      setMessage("A permissão ainda não foi concedida.");
+    }
+  }
+
+  function disable() {
+    setNotificationsEnabled(false);
+    setEnabled(false);
+    setMessage("Notificações pausadas neste aparelho.");
+  }
+
+  const active = enabled && permission === "granted";
+
+  return (
+    <div className="settings-section">
+      <h2>Notificações</h2>
+      <p>Receba avisos de entregas próximas e atualizações importantes do app.</p>
+
+      <div className={active ? "notification-status active" : "notification-status"}>
+        <Bell size={19} />
+        <div>
+          <strong>{active ? "Ativadas" : "Precisam de permissão"}</strong>
+          <span>
+            {permission === "granted"
+              ? "Este aparelho está autorizado a mostrar notificações."
+              : permission === "denied"
+                ? "O sistema bloqueou as notificações para este app."
+                : "O app vem preparado para notificações, mas o sistema exige sua confirmação uma vez."}
+          </span>
+        </div>
+      </div>
+
+      {enabled ? (
+        <button className="primary-button" onClick={enable}>
+          {permission === "granted" ? "Testar notificação" : "Ativar notificações"}
+        </button>
+      ) : (
+        <button className="primary-button" onClick={enable}>Ativar notificações</button>
+      )}
+
+      {enabled && permission === "granted" && (
+        <button className="text-button left-text" onClick={disable}>Pausar notificações neste aparelho</button>
+      )}
+
+      {message && <div className="inline-message">{message}</div>}
+      <small className="settings-note">
+        No iPhone, notificações de PWA exigem que o app esteja adicionado à Tela de Início e que você toque em “Ativar notificações” pelo menos uma vez.
+      </small>
     </div>
   );
 }
