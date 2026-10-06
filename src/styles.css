@@ -2483,3 +2483,45 @@ section,
     white-space: nowrap;
   }
 }
+
+
+.production-date,
+.production-list,
+.two-columns,
+.stack-list,
+.simple-row,
+.simple-row > div {
+  min-width: 0;
+}
+
+.simple-row {
+  align-items: flex-start;
+}
+
+.simple-row > div {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.simple-row > span.badge {
+  flex: 0 0 auto;
+}
+
+.simple-row > div > span {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.4;
+}
+
+@media (max-width: 580px) {
+  .simple-row {
+    gap: 10px;
+  }
+
+  .simple-row > div > span {
+    font-size: 12px;
+  }
+}
