@@ -1684,3 +1684,42 @@ textarea:focus-visible {
     justify-self: start;
   }
 }
+
+
+.confirmation-banner {
+  margin-top: 18px;
+  border: 1px solid #cfe3d7;
+  background: #eef8f2;
+  color: #2f6b4f;
+  border-radius: 12px;
+  padding: 12px 13px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.confirmation-banner strong,
+.confirmation-banner span {
+  display: block;
+}
+
+.confirmation-banner strong {
+  font-size: 13px;
+}
+
+.confirmation-banner span {
+  font-size: 12px;
+  margin-top: 3px;
+  line-height: 1.4;
+}
+
+.confirmation-banner button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+}
