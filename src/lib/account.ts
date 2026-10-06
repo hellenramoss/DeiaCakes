@@ -33,10 +33,15 @@ export async function signIn(email: string, password: string) {
 
 export async function signUp(name: string, email: string, password: string) {
   if (!supabase) throw new Error("Supabase não configurado.");
+  const emailRedirectTo = `${window.location.origin}/DeiaCakes/?email_confirmed=1`;
+
   const { error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: { name } }
+    options: {
+      data: { name },
+      emailRedirectTo
+    }
   });
   if (error) throw error;
 }
