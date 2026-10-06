@@ -60,6 +60,13 @@ function amountDue(order: Order) {
   return Math.max(0, orderTotal(order) - amountPaid(order));
 }
 
+function actualPaymentDate(order: Order) {
+  if (paymentStatusFrom(order) !== "Pago" || order.payments.length === 0) return "";
+  return [...order.payments]
+    .sort((a, b) => a.paidAt.localeCompare(b.paidAt))
+    .at(-1)?.paidAt ?? "";
+}
+
 function paymentStatusFrom(order: Order): PaymentStatus {
   const total = orderTotal(order);
   const paid = amountPaid(order);
@@ -1048,6 +1055,7 @@ function OrderModal({
   const [customerId, setCustomerId] = useState(order?.customerId ?? "");
   const [orderDate, setOrderDate] = useState(order?.orderDate ?? isoToday());
   const [deliveryDate, setDeliveryDate] = useState(order?.deliveryDate ?? isoToday());
+  const [expectedPaymentDate, setExpectedPaymentDate] = useState(order?.expectedPaymentDate ?? "");
   const [status, setStatus] = useState<OrderStatus>(order?.status ?? "Encomendado");
   const [notes, setNotes] = useState(order?.notes ?? "");
   const [items, setItems] = useState<OrderItem[]>(order?.items ?? []);
@@ -1102,6 +1110,7 @@ function OrderModal({
         customerName: customer.name,
         orderDate,
         deliveryDate,
+        expectedPaymentDate,
         status,
         paymentStatus: order?.paymentStatus ?? "Pendente",
         notes,
@@ -1128,9 +1137,19 @@ function OrderModal({
 
         {customers.length === 0 && <div className="form-hint">Cadastre um cliente antes de criar o primeiro pedido.</div>}
 
-        <div className="form-row">
+        <div className="order-date-grid">
           <label><span>Data do pedido</span><input type="date" value={orderDate} onChange={(event) => setOrderDate(event.target.value)} required /></label>
           <label><span>Data de entrega</span><input type="date" value={deliveryDate} onChange={(event) => setDeliveryDate(event.target.value)} required /></label>
+          <label><span>Data pgto. pretendida</span><input type="date" value={expectedPaymentDate} onChange={(event) => setExpectedPaymentDate(event.target.value)} /></label>
+          <label>
+            <span>Data pgto. real</span>
+            <input
+              type="text"
+              value={order && actualPaymentDate(order) ? formatDate(actualPaymentDate(order)) : "Ainda não pago"}
+              readOnly
+              className="readonly-date"
+            />
+          </label>
         </div>
 
         <label>
