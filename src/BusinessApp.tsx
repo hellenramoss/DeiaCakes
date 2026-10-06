@@ -91,6 +91,7 @@ export default function App() {
   const [paymentOrder, setPaymentOrder] = useState<Order | null>(null);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
 
   async function refresh() {
     setLoading(true);
@@ -152,6 +153,7 @@ export default function App() {
     await saveCustomer(customer);
     await refresh();
     setCustomerModal(false);
+    setEditingCustomer(null);
     notify("Cliente salvo.");
   }
 
@@ -292,7 +294,14 @@ export default function App() {
               <CustomersView
                 customers={customers}
                 orders={orders}
-                onNew={() => setCustomerModal(true)}
+                onNew={() => {
+                  setEditingCustomer(null);
+                  setCustomerModal(true);
+                }}
+                onEdit={(customer) => {
+                  setEditingCustomer(customer);
+                  setCustomerModal(true);
+                }}
               />
             )}
 
@@ -349,7 +358,11 @@ export default function App() {
 
       {customerModal && (
         <CustomerModal
-          onClose={() => setCustomerModal(false)}
+          customer={editingCustomer}
+          onClose={() => {
+            setCustomerModal(false);
+            setEditingCustomer(null);
+          }}
           onSave={handleCustomerSave}
         />
       )}
@@ -577,16 +590,21 @@ function OrdersView({
 function CustomersView({
   customers,
   orders,
-  onNew
+  onNew,
+  onEdit
 }: {
   customers: Customer[];
   orders: Order[];
   onNew: () => void;
+  onEdit: (customer: Customer) => void;
 }) {
   const [search, setSearch] = useState("");
+  const normalizedSearch = search.toLowerCase();
+
   const filtered = customers.filter((customer) =>
-    customer.name.toLowerCase().includes(search.toLowerCase()) ||
-    customer.phone.toLowerCase().includes(search.toLowerCase())
+    customer.name.toLowerCase().includes(normalizedSearch) ||
+    customer.phone.toLowerCase().includes(normalizedSearch) ||
+    customer.origin.toLowerCase().includes(normalizedSearch)
   );
 
   return (
@@ -602,7 +620,7 @@ function CustomersView({
       <div className="toolbar">
         <label className="search-box">
           <Search size={18} />
-          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar por nome ou telefone" />
+          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar por nome, telefone ou origem" />
         </label>
       </div>
 
@@ -613,17 +631,18 @@ function CustomersView({
           const due = customerOrders.reduce((sum, order) => sum + amountDue(order), 0);
 
           return (
-            <div className="customer-card" key={customer.id}>
+            <button className="customer-card customer-card-button" key={customer.id} onClick={() => onEdit(customer)}>
               <div className="avatar"><UserRound size={22} /></div>
               <div className="customer-info">
                 <strong>{customer.name}</strong>
                 <span>{customer.phone || "Sem telefone"}</span>
+                <span>{customer.origin || "Sem origem"}</span>
               </div>
               <div className="customer-numbers">
                 <div><span>Total comprado</span><strong>{formatCurrency(total)}</strong></div>
                 <div><span>Pendente</span><strong className={due > 0 ? "text-danger" : ""}>{formatCurrency(due)}</strong></div>
               </div>
-            </div>
+            </button>
           );
         })}
       </div>
@@ -964,16 +983,18 @@ function ProductModal({
 }
 
 function CustomerModal({
+  customer,
   onClose,
   onSave
 }: {
+  customer: Customer | null;
   onClose: () => void;
   onSave: (customer: Customer) => Promise<void>;
 }) {
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
-  const [notes, setNotes] = useState("");
+  const [name, setName] = useState(customer?.name ?? "");
+  const [phone, setPhone] = useState(customer?.phone ?? "");
+  const [origin, setOrigin] = useState(customer?.origin ?? "");
+  const [notes, setNotes] = useState(customer?.notes ?? "");
   const [saving, setSaving] = useState(false);
 
   async function submit(event: FormEvent) {
@@ -982,20 +1003,30 @@ function CustomerModal({
 
     setSaving(true);
     try {
-      await onSave({ id: uid(), name: name.trim(), phone, address, notes });
+      await onSave({
+        id: customer?.id ?? uid(),
+        name: name.trim(),
+        phone: phone.trim(),
+        origin: origin.trim(),
+        notes
+      });
     } finally {
       setSaving(false);
     }
   }
 
   return (
-    <Modal title="Novo cliente" subtitle="Só o nome é obrigatório." onClose={onClose}>
+    <Modal
+      title={customer ? "Editar cliente" : "Novo cliente"}
+      subtitle="A origem pode ser trabalho, escola, rua de casa, indicação..."
+      onClose={onClose}
+    >
       <form className="form" onSubmit={submit}>
         <label><span>Nome</span><input value={name} onChange={(event) => setName(event.target.value)} autoFocus required /></label>
         <label><span>Telefone / WhatsApp</span><input value={phone} onChange={(event) => setPhone(event.target.value)} inputMode="tel" /></label>
-        <label><span>Endereço</span><input value={address} onChange={(event) => setAddress(event.target.value)} /></label>
+        <label><span>Origem</span><input value={origin} onChange={(event) => setOrigin(event.target.value)} placeholder="Ex.: trabalho, escola, rua de casa" /></label>
         <label><span>Observações</span><textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows={3} /></label>
-        <div className="form-actions"><button type="button" className="secondary-button" onClick={onClose}>Cancelar</button><button className="primary-button" disabled={saving}>{saving ? "Salvando..." : "Salvar cliente"}</button></div>
+        <div className="form-actions"><button type="button" className="secondary-button" onClick={onClose}>Cancelar</button><button className="primary-button" disabled={saving}>{saving ? "Salvando..." : customer ? "Salvar alterações" : "Salvar cliente"}</button></div>
       </form>
     </Modal>
   );
