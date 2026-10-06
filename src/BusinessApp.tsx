@@ -18,7 +18,15 @@ import {
 } from "lucide-react";
 import { formatCurrency, formatCurrencyInput, parseCurrencyInput } from "./lib/currency";
 import { hasSupabase, supabase } from "./lib/supabase";
-import { loadData, removeOrder, saveCustomer, saveOrder, saveProduct } from "./lib/storage";
+import {
+  loadData,
+  pendingChangesCount,
+  removeOrder,
+  saveCustomer,
+  saveOrder,
+  saveProduct,
+  syncPendingChanges
+} from "./lib/storage";
 import AppLoader from "./components/AppLoader";
 import {
   Customer,
@@ -101,6 +109,8 @@ export default function App({ logoSrc }: { logoSrc?: string }) {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [loaderMessage, setLoaderMessage] = useState<string | null>(null);
+  const [online, setOnline] = useState(navigator.onLine);
+  const [pendingCount, setPendingCount] = useState(pendingChangesCount());
 
   async function refresh() {
     setLoading(true);
@@ -142,6 +152,33 @@ export default function App({ logoSrc }: { logoSrc?: string }) {
     return () => {
       window.clearTimeout(refreshTimer);
       client.removeChannel(channel);
+    };
+  }, []);
+
+  useEffect(() => {
+    const updatePending = () => setPendingCount(pendingChangesCount());
+
+    const handleOffline = () => {
+      setOnline(false);
+      updatePending();
+    };
+
+    const handleOnline = async () => {
+      setOnline(true);
+      const synced = await syncPendingChanges();
+      updatePending();
+      await refresh();
+      if (synced > 0) notify(`${synced} alteração(ões) sincronizada(s).`);
+    };
+
+    window.addEventListener("offline", handleOffline);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("deia-pending-change", updatePending);
+
+    return () => {
+      window.removeEventListener("offline", handleOffline);
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("deia-pending-change", updatePending);
     };
   }, []);
 
@@ -274,12 +311,19 @@ export default function App({ logoSrc }: { logoSrc?: string }) {
         </nav>
 
         <div className="data-mode">
-          <span className={hasSupabase ? "status-dot online" : "status-dot"} />
-          {hasSupabase ? "Supabase conectado" : "Modo local"}
+          <span className={online && hasSupabase ? "status-dot online" : "status-dot"} />
+          {!online
+            ? pendingCount > 0 ? `Offline · ${pendingCount} pendente(s)` : "Offline · dados salvos"
+            : pendingCount > 0 ? `Sincronizando · ${pendingCount}` : hasSupabase ? "Supabase conectado" : "Modo local"}
         </div>
       </aside>
 
       <main className="main">
+        {!online && (
+          <div className="offline-banner">
+            Sem internet. Você pode continuar usando o app e as alterações serão sincronizadas quando a conexão voltar.
+          </div>
+        )}
         <header className="mobile-header">
           <div className="brand compact">
             <div className="brand-mark">D</div>
@@ -383,6 +427,7 @@ export default function App({ logoSrc }: { logoSrc?: string }) {
       {productModal && (
         <ProductModal
           product={editingProduct}
+          orders={orders}
           onClose={() => {
             setProductModal(false);
             setEditingProduct(null);
@@ -394,6 +439,7 @@ export default function App({ logoSrc }: { logoSrc?: string }) {
       {customerModal && (
         <CustomerModal
           customer={editingCustomer}
+          orders={orders}
           onClose={() => {
             setCustomerModal(false);
             setEditingCustomer(null);
@@ -958,10 +1004,12 @@ function Modal({
 
 function ProductModal({
   product,
+  orders,
   onClose,
   onSave
 }: {
   product: Product | null;
+  orders: Order[];
   onClose: () => void;
   onSave: (product: Product) => Promise<void>;
 }) {
@@ -972,6 +1020,25 @@ function ProductModal({
   const [cost, setCost] = useState(product ? formatCurrencyInput(product.cost) : "");
   const [active, setActive] = useState(product?.active ?? true);
   const [saving, setSaving] = useState(false);
+
+  const productOrders = product
+    ? orders
+        .filter((order) => order.status !== "Cancelado" && order.items.some((item) => item.productId === product.id))
+        .sort((a, b) => b.orderDate.localeCompare(a.orderDate))
+    : [];
+  const productUnits = productOrders.reduce(
+    (sum, order) => sum + order.items
+      .filter((item) => item.productId === product?.id)
+      .reduce((itemSum, item) => itemSum + item.quantity, 0),
+    0
+  );
+  const productRevenue = productOrders.reduce(
+    (sum, order) => sum + order.items
+      .filter((item) => item.productId === product?.id)
+      .reduce((itemSum, item) => itemSum + item.quantity * item.unitPrice, 0),
+    0
+  );
+  const lastSale = productOrders[0]?.orderDate ?? "";
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -1011,6 +1078,37 @@ function ProductModal({
           <input type="checkbox" checked={active} onChange={(event) => setActive(event.target.checked)} />
           <span>Produto ativo para novos pedidos</span>
         </label>
+
+        {product && (
+          <div className="history-section">
+            <div className="history-title">
+              <strong>Histórico do produto</strong>
+              <span>{productOrders.length} pedido(s)</span>
+            </div>
+            <div className="history-stats">
+              <div><span>Unidades vendidas</span><strong>{productUnits}</strong></div>
+              <div><span>Faturamento</span><strong>{formatCurrency(productRevenue)}</strong></div>
+              <div><span>Última venda</span><strong>{lastSale ? formatDate(lastSale) : "Nenhuma"}</strong></div>
+            </div>
+            {productOrders.length > 0 && (
+              <div className="history-list">
+                {productOrders.slice(0, 5).map((order) => {
+                  const item = order.items.find((orderItem) => orderItem.productId === product.id);
+                  return (
+                    <div className="history-row" key={order.id}>
+                      <div>
+                        <strong>{order.customerName}</strong>
+                        <span>{formatDate(order.orderDate)}</span>
+                      </div>
+                      <span>{item?.quantity ?? 0} un. · {formatCurrency((item?.quantity ?? 0) * (item?.unitPrice ?? 0))}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="form-actions"><button type="button" className="secondary-button" onClick={onClose}>Cancelar</button><button className="primary-button" disabled={saving}>{saving ? "Salvando..." : product ? "Salvar alterações" : "Salvar produto"}</button></div>
       </form>
     </Modal>
@@ -1019,10 +1117,12 @@ function ProductModal({
 
 function CustomerModal({
   customer,
+  orders,
   onClose,
   onSave
 }: {
   customer: Customer | null;
+  orders: Order[];
   onClose: () => void;
   onSave: (customer: Customer) => Promise<void>;
 }) {
@@ -1031,6 +1131,16 @@ function CustomerModal({
   const [origin, setOrigin] = useState(customer?.origin ?? "");
   const [notes, setNotes] = useState(customer?.notes ?? "");
   const [saving, setSaving] = useState(false);
+
+  const customerOrders = customer
+    ? orders
+        .filter((order) => order.customerId === customer.id && order.status !== "Cancelado")
+        .sort((a, b) => b.orderDate.localeCompare(a.orderDate))
+    : [];
+  const customerTotal = customerOrders.reduce((sum, order) => sum + orderTotal(order), 0);
+  const customerPaid = customerOrders.reduce((sum, order) => sum + amountPaid(order), 0);
+  const customerDue = customerOrders.reduce((sum, order) => sum + amountDue(order), 0);
+
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -1061,6 +1171,39 @@ function CustomerModal({
         <label><span>Telefone / WhatsApp</span><input value={phone} onChange={(event) => setPhone(event.target.value)} inputMode="tel" /></label>
         <label><span>Origem</span><input value={origin} onChange={(event) => setOrigin(event.target.value)} placeholder="Ex.: trabalho, escola, rua de casa" /></label>
         <label><span>Observações</span><textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows={3} /></label>
+
+        {customer && (
+          <div className="history-section">
+            <div className="history-title">
+              <strong>Histórico do cliente</strong>
+              <span>{customerOrders.length} pedido(s)</span>
+            </div>
+            <div className="history-stats">
+              <div><span>Total comprado</span><strong>{formatCurrency(customerTotal)}</strong></div>
+              <div><span>Total pago</span><strong>{formatCurrency(customerPaid)}</strong></div>
+              <div><span>Saldo pendente</span><strong>{formatCurrency(customerDue)}</strong></div>
+            </div>
+            {customerOrders.length > 0 ? (
+              <div className="history-list">
+                {customerOrders.slice(0, 6).map((order) => (
+                  <div className="history-row" key={order.id}>
+                    <div>
+                      <strong>{formatDate(order.orderDate)}</strong>
+                      <span>{order.items.map((item) => `${item.quantity}x ${item.productName}`).join(" · ")}</span>
+                    </div>
+                    <div className="history-row-value">
+                      <strong>{formatCurrency(orderTotal(order))}</strong>
+                      <span className={badgeClass(order.paymentStatus)}>{order.paymentStatus}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="empty small">Ainda não há pedidos para este cliente.</div>
+            )}
+          </div>
+        )}
+
         <div className="form-actions"><button type="button" className="secondary-button" onClick={onClose}>Cancelar</button><button className="primary-button" disabled={saving}>{saving ? "Salvando..." : customer ? "Salvar alterações" : "Salvar cliente"}</button></div>
       </form>
     </Modal>
