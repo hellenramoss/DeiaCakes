@@ -28,6 +28,7 @@ import {
   syncPendingChanges
 } from "./lib/storage";
 import AppLoader from "./components/AppLoader";
+import { notifyUpcomingDeliveries, showAppNotification } from "./lib/notifications";
 import {
   Customer,
   Order,
@@ -119,6 +120,7 @@ export default function App({ logoSrc }: { logoSrc?: string }) {
       setProducts(data.products);
       setCustomers(data.customers);
       setOrders(data.orders);
+      void notifyUpcomingDeliveries(data.orders);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Não foi possível carregar os dados.");
     } finally {
@@ -144,7 +146,16 @@ export default function App({ logoSrc }: { logoSrc?: string }) {
       .channel("deia-cakes-data-sync")
       .on("postgres_changes", { event: "*", schema: "public", table: "products" }, scheduleRefresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "customers" }, scheduleRefresh)
-      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, scheduleRefresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => {
+        scheduleRefresh();
+        if (document.hidden) {
+          void showAppNotification(
+            "Pedido atualizado",
+            "Houve uma alteração nos pedidos do Déia Cake.",
+            "orders-updated"
+          );
+        }
+      })
       .on("postgres_changes", { event: "*", schema: "public", table: "order_items" }, scheduleRefresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "payments" }, scheduleRefresh)
       .subscribe();
