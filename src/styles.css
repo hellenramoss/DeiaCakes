@@ -1767,3 +1767,16 @@ textarea:focus-visible {
 .product-active-toggle span {
   color: var(--text) !important;
 }
+
+
+.customer-card-button {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+}
+
+.customer-card-button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(154, 93, 71, 0.28);
+}
