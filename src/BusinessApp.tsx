@@ -21,6 +21,7 @@ import { hasSupabase, supabase } from "./lib/supabase";
 import {
   loadData,
   pendingChangesCount,
+  removeCustomer,
   removeOrder,
   saveCustomer,
   saveOrder,
@@ -219,6 +220,23 @@ export default function App({ logoSrc }: { logoSrc?: string }) {
       setCustomerModal(false);
       setEditingCustomer(null);
       notify("Cliente salvo.");
+    } finally {
+      setLoaderMessage(null);
+    }
+  }
+
+  async function handleDeleteCustomer(customer: Customer) {
+    if (!window.confirm(`Excluir o cliente ${customer.name}?`)) return;
+
+    setLoaderMessage("Excluindo cliente...");
+    try {
+      await removeCustomer(customer.id);
+      await refresh();
+      setCustomerModal(false);
+      setEditingCustomer(null);
+      notify("Cliente excluído.");
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "Não foi possível excluir o cliente.");
     } finally {
       setLoaderMessage(null);
     }
@@ -456,6 +474,7 @@ export default function App({ logoSrc }: { logoSrc?: string }) {
             setEditingCustomer(null);
           }}
           onSave={handleCustomerSave}
+          onDelete={handleDeleteCustomer}
         />
       )}
 
@@ -1130,18 +1149,21 @@ function CustomerModal({
   customer,
   orders,
   onClose,
-  onSave
+  onSave,
+  onDelete
 }: {
   customer: Customer | null;
   orders: Order[];
   onClose: () => void;
   onSave: (customer: Customer) => Promise<void>;
+  onDelete: (customer: Customer) => Promise<void>;
 }) {
   const [name, setName] = useState(customer?.name ?? "");
   const [phone, setPhone] = useState(customer?.phone ?? "");
   const [origin, setOrigin] = useState(customer?.origin ?? "");
   const [notes, setNotes] = useState(customer?.notes ?? "");
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const customerOrders = customer
     ? orders
@@ -1215,7 +1237,29 @@ function CustomerModal({
           </div>
         )}
 
-        <div className="form-actions"><button type="button" className="secondary-button" onClick={onClose}>Cancelar</button><button className="primary-button" disabled={saving}>{saving ? "Salvando..." : customer ? "Salvar alterações" : "Salvar cliente"}</button></div>
+        <div className="form-actions customer-form-actions">
+          {customer && (
+            <button
+              type="button"
+              className="secondary-button delete-customer-button"
+              disabled={saving || deleting}
+              onClick={async () => {
+                setDeleting(true);
+                try {
+                  await onDelete(customer);
+                } finally {
+                  setDeleting(false);
+                }
+              }}
+            >
+              <Trash2 size={16} /> {deleting ? "Excluindo..." : "Excluir cliente"}
+            </button>
+          )}
+          <div className="form-actions-right">
+            <button type="button" className="secondary-button" onClick={onClose}>Cancelar</button>
+            <button className="primary-button" disabled={saving || deleting}>{saving ? "Salvando..." : customer ? "Salvar alterações" : "Salvar cliente"}</button>
+          </div>
+        </div>
       </form>
     </Modal>
   );
@@ -1247,14 +1291,14 @@ function OrderModal({
     const first = products.find((product) => product.active);
     if (!first) return;
     setItems((current) => [
-      ...current,
       {
         id: uid(),
         productId: first.id,
         productName: first.name,
         quantity: 1,
         unitPrice: first.price
-      }
+      },
+      ...current
     ]);
   }
 
