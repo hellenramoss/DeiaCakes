@@ -2376,3 +2376,49 @@ section,
   font-size: 12px;
   line-height: 1.4;
 }
+
+
+.payment-fields-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.payment-fields-grid > label {
+  min-width: 0;
+}
+
+.payment-fields-grid .payment-method-field {
+  grid-column: 1 / -1;
+}
+
+.payment-fields-grid input,
+.payment-fields-grid select,
+.payment-fields-grid .money-input {
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+}
+
+@media (max-width: 580px) {
+  .payment-fields-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .payment-fields-grid > label > span {
+    white-space: nowrap;
+  }
+
+  .payment-fields-grid input[type="date"] {
+    min-width: 0;
+    font-size: 14px;
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  .payment-fields-grid .money-input input {
+    min-width: 0;
+    width: 1%;
+  }
+}
