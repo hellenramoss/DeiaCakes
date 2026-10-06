@@ -107,7 +107,7 @@ export async function loadData(): Promise<AppData> {
       id: row.id,
       name: row.name,
       phone: row.phone ?? "",
-      address: row.address ?? "",
+      origin: row.origin ?? "",
       notes: row.notes ?? ""
     })),
     orders: (ordersResult.data ?? []).map((row) =>
@@ -153,11 +153,18 @@ export async function saveCustomer(customer: Customer) {
     id: customer.id,
     name: customer.name,
     phone: customer.phone,
-    address: customer.address,
+    origin: customer.origin,
     notes: customer.notes
   });
 
   if (error) throw error;
+
+  const { error: ordersError } = await supabase
+    .from("orders")
+    .update({ customer_name: customer.name })
+    .eq("customer_id", customer.id);
+
+  if (ordersError) throw ordersError;
 }
 
 export async function saveOrder(order: Order) {
