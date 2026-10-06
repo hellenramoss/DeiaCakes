@@ -98,6 +98,7 @@ export async function loadData(): Promise<AppData> {
       id: row.id,
       name: row.name,
       size: row.size,
+      category: row.category ?? "Outros",
       price: Number(row.price),
       cost: Number(row.cost),
       active: row.active
@@ -128,6 +129,7 @@ export async function saveProduct(product: Product) {
   const { error } = await supabase.from("products").upsert({
     id: product.id,
     name: product.name,
+    category: product.category,
     size: product.size,
     price: product.price,
     cost: product.cost,
