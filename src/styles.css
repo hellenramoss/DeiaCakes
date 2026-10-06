@@ -2525,3 +2525,44 @@ section,
     font-size: 12px;
   }
 }
+
+
+.customer-form-actions {
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.form-actions-right {
+  display: flex;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.delete-customer-button {
+  color: var(--danger);
+  border-color: rgba(168, 61, 75, 0.2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+
+@media (max-width: 580px) {
+  .customer-form-actions {
+    align-items: stretch;
+  }
+
+  .delete-customer-button,
+  .form-actions-right {
+    width: 100%;
+  }
+
+  .form-actions-right {
+    margin-left: 0;
+  }
+
+  .form-actions-right > button {
+    flex: 1;
+  }
+}
