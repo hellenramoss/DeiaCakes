@@ -5,6 +5,7 @@ export type PaymentMethod = "Pix" | "Dinheiro" | "Cartão" | "Outro";
 export type Product = {
   id: string;
   name: string;
+  category: string;
   size: string;
   price: number;
   cost: number;
@@ -46,4 +47,20 @@ export type Order = {
   notes: string;
   items: OrderItem[];
   payments: Payment[];
+};
+
+export type Profile = {
+  id: string;
+  name: string;
+  email: string;
+  avatarDataUrl: string | null;
+  role: "admin" | "user";
+  isActive: boolean;
+};
+
+export type AppSettings = {
+  appName: string;
+  logoDataUrl: string | null;
+  backgroundDataUrl: string | null;
+  backgroundOpacity: number;
 };
