@@ -884,6 +884,7 @@ function ProductModal({
       await onSave({
         id: uid(),
         name: name.trim(),
+        category: "Outros",
         size: size.trim(),
         price: parseCurrencyInput(price),
         cost: parseCurrencyInput(cost),
