@@ -168,6 +168,31 @@ export async function saveCustomer(customer: Customer) {
   if (ordersError) throw ordersError;
 }
 
+export async function removeCustomer(customerId: string) {
+  if (!hasSupabase || !supabase) {
+    const data = readLocal();
+    if (data.orders.some((order) => order.customerId === customerId)) {
+      throw new Error("Esse cliente possui pedidos cadastrados e não pode ser excluído.");
+    }
+    data.customers = data.customers.filter((customer) => customer.id !== customerId);
+    writeLocal(data);
+    return;
+  }
+
+  const { count, error: ordersError } = await supabase
+    .from("orders")
+    .select("id", { count: "exact", head: true })
+    .eq("customer_id", customerId);
+
+  if (ordersError) throw ordersError;
+  if ((count ?? 0) > 0) {
+    throw new Error("Esse cliente possui pedidos cadastrados e não pode ser excluído. O histórico foi preservado.");
+  }
+
+  const { error } = await supabase.from("customers").delete().eq("id", customerId);
+  if (error) throw error;
+}
+
 export async function saveOrder(order: Order) {
   if (!hasSupabase || !supabase) {
     const data = readLocal();
