@@ -42,6 +42,7 @@ export type Order = {
   customerName: string;
   orderDate: string;
   deliveryDate: string;
+  expectedPaymentDate: string;
   status: OrderStatus;
   paymentStatus: PaymentStatus;
   notes: string;
