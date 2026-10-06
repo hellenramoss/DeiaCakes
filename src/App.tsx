@@ -66,6 +66,7 @@ export default function App() {
 
   useEffect(() => {
     if (!supabase || !session) return;
+    const client = supabase;
 
     let refreshTimer = 0;
     const scheduleAccountRefresh = () => {
@@ -77,7 +78,7 @@ export default function App() {
       }, 180);
     };
 
-    const channel = supabase
+    const channel = client
       .channel("deia-cakes-account-sync")
       .on("postgres_changes", { event: "*", schema: "public", table: "app_settings" }, scheduleAccountRefresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, scheduleAccountRefresh)
@@ -85,7 +86,7 @@ export default function App() {
 
     return () => {
       window.clearTimeout(refreshTimer);
-      supabase.removeChannel(channel);
+      client.removeChannel(channel);
     };
   }, [session]);
 
