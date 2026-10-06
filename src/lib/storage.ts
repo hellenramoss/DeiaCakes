@@ -11,9 +11,9 @@ const STORAGE_KEY = "deia-cakes-data-v1";
 
 const seed: AppData = {
   products: [
-    { id: "p1", name: "Torta de frango", size: "Média", price: 65, cost: 32, active: true },
-    { id: "p2", name: "Torta de palmito", size: "Média", price: 70, cost: 36, active: true },
-    { id: "p3", name: "Torta de limão", size: "Média", price: 58, cost: 27, active: true }
+    { id: "p1", name: "Torta de frango", category: "Tortas salgadas", size: "Média", price: 65, cost: 32, active: true },
+    { id: "p2", name: "Torta de palmito", category: "Tortas salgadas", size: "Média", price: 70, cost: 36, active: true },
+    { id: "p3", name: "Torta de limão", category: "Tortas salgadas", size: "Média", price: 58, cost: 27, active: true }
   ],
   customers: [],
   orders: []
