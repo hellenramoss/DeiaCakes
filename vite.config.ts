@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
+  base: "/DeiaCakes/",
   plugins: [
     react(),
     VitePWA({
@@ -15,7 +16,7 @@ export default defineConfig({
         theme_color: "#8a3f62",
         background_color: "#fffaf7",
         display: "standalone",
-        start_url: "/",
+        start_url: "/DeiaCakes/",
         icons: [
           {
             src: "icon.svg",
