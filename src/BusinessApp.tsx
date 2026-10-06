@@ -287,7 +287,7 @@ export default function App() {
       </main>
 
       <nav className="bottom-nav">
-        {menu.slice(0, 5).map((item) => {
+        {menu.map((item) => {
           const Icon = item.icon;
           return (
             <button
