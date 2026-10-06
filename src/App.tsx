@@ -16,6 +16,7 @@ import {
   signUp
 } from "./lib/account";
 import { AppSettings, Profile } from "./types";
+import { supabase } from "./lib/supabase";
 
 const defaultLogo = "/DeiaCakes/deia-logo.webp";
 
@@ -62,6 +63,31 @@ export default function App() {
     refreshSettings();
     return onAuthChange(refreshSession);
   }, []);
+
+  useEffect(() => {
+    if (!supabase || !session) return;
+
+    let refreshTimer = 0;
+    const scheduleAccountRefresh = () => {
+      window.clearTimeout(refreshTimer);
+      refreshTimer = window.setTimeout(async () => {
+        await refreshSettings();
+        const currentProfile = await loadMyProfile();
+        if (currentProfile) setProfile(currentProfile);
+      }, 180);
+    };
+
+    const channel = supabase
+      .channel("deia-cakes-account-sync")
+      .on("postgres_changes", { event: "*", schema: "public", table: "app_settings" }, scheduleAccountRefresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, scheduleAccountRefresh)
+      .subscribe();
+
+    return () => {
+      window.clearTimeout(refreshTimer);
+      supabase.removeChannel(channel);
+    };
+  }, [session]);
 
   useEffect(() => {
     if (!emailConfirmed) return;
