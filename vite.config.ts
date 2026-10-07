@@ -8,7 +8,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["pwa-192.png", "pwa-512.png", "deia-logo.webp"],
+      includeAssets: ["pwa-192.svg", "pwa-512.svg", "deia-logo.webp"],
       manifest: {
         name: "Déia Cake Ateliê",
         short_name: "Déia Cake",
@@ -20,21 +20,21 @@ export default defineConfig({
         start_url: "/DeiaCakes/",
         icons: [
           {
-            src: "pwa-192.png",
+            src: "pwa-192.svg",
             sizes: "192x192",
-            type: "image/png",
+            type: "image/svg+xml",
             purpose: "any"
           },
           {
-            src: "pwa-512.png",
+            src: "pwa-512.svg",
             sizes: "512x512",
-            type: "image/png",
+            type: "image/svg+xml",
             purpose: "any"
           },
           {
-            src: "pwa-512.png",
+            src: "pwa-512.svg",
             sizes: "512x512",
-            type: "image/png",
+            type: "image/svg+xml",
             purpose: "maskable"
           }
         ]
