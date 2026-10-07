@@ -2601,3 +2601,128 @@ section,
     grid-template-columns: 170px 170px;
   }
 }
+
+
+.production-pending-panel {
+  margin-bottom: 18px;
+}
+
+.production-pending-groups {
+  display: grid;
+  gap: 12px;
+}
+
+.production-pending-group {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  background: white;
+}
+
+.production-pending-date {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-soft);
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.production-pending-date span {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.production-pending-date strong {
+  font-size: 12px;
+  color: var(--primary);
+  white-space: nowrap;
+}
+
+.production-pending-orders {
+  display: grid;
+}
+
+.production-pending-order {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 12px;
+  border-top: 1px solid #f1e9ed;
+  min-width: 0;
+}
+
+.production-pending-order:first-child {
+  border-top: 0;
+}
+
+.production-pending-order > div {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.production-pending-order strong,
+.production-pending-order > div > span {
+  display: block;
+}
+
+.production-pending-order > div > span {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.production-pending-order > .badge {
+  flex: 0 1 auto;
+  max-width: 42%;
+}
+
+@media (max-width: 580px) {
+  .order-row {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    align-items: start;
+    gap: 10px 12px;
+  }
+
+  .order-row .date-box {
+    grid-row: 1 / span 2;
+  }
+
+  .order-row .row-main {
+    grid-column: 2;
+    min-width: 0;
+  }
+
+  .order-row > .badge {
+    grid-column: 2;
+    justify-self: start;
+    max-width: 100%;
+    white-space: normal;
+    line-height: 1.2;
+  }
+
+  .production-pending-order {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+  }
+
+  .production-pending-order > .badge {
+    max-width: 120px;
+    white-space: normal;
+    text-align: center;
+    justify-content: center;
+    line-height: 1.15;
+  }
+}
