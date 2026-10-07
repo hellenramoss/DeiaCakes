@@ -543,9 +543,9 @@ function Dashboard({
       />
 
       <div className="stats-grid">
-        <Stat icon={CircleDollarSign} label="Vendido no mês" value={formatCurrency(monthRevenue)} />
+        <Stat icon={CircleDollarSign} label="Total vendido no mês" value={formatCurrency(monthRevenue)} />
         <Stat icon={CheckCircle2} label="Recebido no mês" value={formatCurrency(monthReceived)} />
-        <Stat icon={WalletCards} label="Total a receber" value={formatCurrency(totalDue)} highlight={totalDue > 0} />
+        <Stat icon={WalletCards} label="Total pendente a receber" value={formatCurrency(totalDue)} highlight={totalDue > 0} />
         <Stat icon={ShoppingBag} label="Unidades no mês" value={String(monthUnits)} />
       </div>
 
