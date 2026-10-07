@@ -873,6 +873,15 @@ function ReceivablesView({
 function ProductionView({ orders }: { orders: Order[] }) {
   const [date, setDate] = useState(isoToday());
 
+  const pendingProduction = orders
+    .filter((order) => order.status === "Encomendado" || order.status === "Em produção")
+    .sort((a, b) => a.deliveryDate.localeCompare(b.deliveryDate));
+
+  const pendingByDate = pendingProduction.reduce<Record<string, Order[]>>((groups, order) => {
+    (groups[order.deliveryDate] ??= []).push(order);
+    return groups;
+  }, {});
+
   const items = new Map<string, { name: string; quantity: number }>();
   const dayOrders = orders.filter(
     (order) => order.deliveryDate === date && order.status !== "Cancelado" && order.status !== "Entregue"
@@ -897,6 +906,48 @@ function ProductionView({ orders }: { orders: Order[] }) {
         title="Produção"
         subtitle="As quantidades são somadas automaticamente a partir das encomendas."
       />
+
+      <div className="panel production-pending-panel">
+        <div className="panel-title">
+          <div>
+            <h2>Pendências de produção</h2>
+            <p>{pendingProduction.length} pedido(s) ainda precisam ser preparados.</p>
+          </div>
+          <PackageCheck size={22} />
+        </div>
+
+        {pendingProduction.length === 0 ? (
+          <Empty text="Nenhuma produção pendente." />
+        ) : (
+          <div className="production-pending-groups">
+            {Object.entries(pendingByDate).map(([deliveryDate, dateOrders]) => (
+              <div className="production-pending-group" key={deliveryDate}>
+                <button type="button" className="production-pending-date" onClick={() => setDate(deliveryDate)}>
+                  <span>{formatDate(deliveryDate)}</span>
+                  <strong>
+                    {dateOrders.reduce(
+                      (sum, order) => sum + order.items.reduce((itemSum, item) => itemSum + item.quantity, 0),
+                      0
+                    )} un.
+                  </strong>
+                </button>
+
+                <div className="production-pending-orders">
+                  {dateOrders.map((order) => (
+                    <div className="production-pending-order" key={order.id}>
+                      <div>
+                        <strong>{order.customerName}</strong>
+                        <span>{order.items.map((item) => `${item.quantity}x ${item.productName}`).join(" · ")}</span>
+                      </div>
+                      <span className={badgeClass(order.status)}>{order.status}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       <div className="production-date">
         <label>
