@@ -108,41 +108,6 @@ export default function App() {
     window.history.replaceState({}, "", url.pathname + url.search + url.hash);
   }, [emailConfirmed]);
 
-  useEffect(() => {
-    const logo = settings.logoDataUrl || defaultLogo;
-    const manifest = {
-      name: settings.appName,
-      short_name: "Déia Cake",
-      description: "Controle de pedidos, clientes, pagamentos e produção",
-      theme_color: "#9a5d47",
-      background_color: "#fff9f1",
-      display: "standalone",
-      start_url: "/DeiaCakes/",
-      icons: [
-        {
-          src: logo,
-          sizes: "512x512",
-          type: settings.logoDataUrl ? "image/webp" : "image/webp",
-          purpose: "any maskable"
-        }
-      ]
-    };
-
-    const blob = new Blob([JSON.stringify(manifest)], { type: "application/manifest+json" });
-    const url = URL.createObjectURL(blob);
-    let link = document.querySelector('link[rel="manifest"]') as HTMLLinkElement | null;
-
-    if (!link) {
-      link = document.createElement("link");
-      link.rel = "manifest";
-      document.head.appendChild(link);
-    }
-
-    link.href = url;
-    document.title = settings.appName;
-
-    return () => URL.revokeObjectURL(url);
-  }, [settings]);
 
   const shellStyle = useMemo(() => {
     const logo = settings.logoDataUrl || defaultLogo;
@@ -579,7 +544,7 @@ function AppearanceEditor({
     <div className="settings-section">
       {busy && <AppLoader message="Salvando aparência..." logoSrc={draft.logoDataUrl || defaultLogo} />}
       <h2>Aparência do app</h2>
-      <p>Logo, ícone da PWA e fundo podem ser trocados daqui.</p>
+      <p>Logo do app e imagem de fundo podem ser trocados daqui.</p>
 
       <label className="settings-field">
         <span>Nome do app</span>
@@ -588,7 +553,7 @@ function AppearanceEditor({
 
       <label className="image-picker brand-picker">
         <img src={draft.logoDataUrl || defaultLogo} alt="" />
-        <span><Camera size={16} /> Alterar logo e ícone</span>
+        <span><Camera size={16} /> Alterar logo</span>
         <input type="file" accept="image/*" onChange={(event) => pick("logo", event.target.files?.[0])} />
       </label>
 
@@ -624,7 +589,7 @@ function AppearanceEditor({
 
       {message && <div className="inline-message">{message}</div>}
       <button className="primary-button" onClick={save} disabled={busy}>{busy ? "Salvando..." : "Salvar aparência"}</button>
-      <small className="settings-note">Se o ícone de um app já instalado não mudar, remova e instale a PWA novamente para o celular buscar o novo ícone.</small>
+      <small className="settings-note">O ícone de instalação usa uma versão fixa otimizada para Android e iPhone.</small>
     </div>
   );
 }
