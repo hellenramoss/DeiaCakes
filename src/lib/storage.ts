@@ -124,7 +124,8 @@ function mapOrderRow(row: any, items: any[], payments: any[]): Order {
       productId: item.product_id,
       productName: item.product_name,
       quantity: Number(item.quantity),
-      unitPrice: Number(item.unit_price)
+      unitPrice: Number(item.unit_price),
+      readyStockQuantity: Number(item.ready_stock_quantity ?? 0)
     }));
 
   const orderPayments = payments
@@ -217,7 +218,8 @@ async function saveOrderRemote(order: Order) {
         product_id: item.productId,
         product_name: item.productName,
         quantity: item.quantity,
-        unit_price: item.unitPrice
+        unit_price: item.unitPrice,
+        ready_stock_quantity: item.readyStockQuantity ?? 0
       }))
     );
     if (itemsError) throw itemsError;
