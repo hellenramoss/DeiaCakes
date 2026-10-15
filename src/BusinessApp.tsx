@@ -905,15 +905,19 @@ function ProductionView({ orders }: { orders: Order[]; stock: Record<string, num
     (order) => order.deliveryDate === date && order.status !== "Cancelado" && order.status !== "Entregue"
   );
 
-  dayOrders.forEach((order) => {
-    order.items.forEach((item) => {
-      const current = items.get(item.productId);
-      items.set(item.productId, {
-        name: item.productName,
-        quantity: (current?.quantity ?? 0) + Math.max(0, item.quantity - (item.readyStockQuantity ?? 0))
+  dayOrders
+    .filter(order => order.status === "Encomendado" || order.status === "Em produção")
+    .forEach(order => {
+      order.items.forEach(item => {
+        const needed = Math.max(0, item.quantity - (item.readyStockQuantity ?? 0));
+        if (needed === 0) return;
+        const current = items.get(item.productId);
+        items.set(item.productId, {
+          name: item.productName,
+          quantity: (current?.quantity ?? 0) + needed
+        });
       });
     });
-  });
 
   const totalUnits = Array.from(items.values()).reduce((sum, item) => sum + item.quantity, 0);
 
