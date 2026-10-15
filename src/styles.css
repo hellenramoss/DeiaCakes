@@ -2760,3 +2760,36 @@ section,
     padding: 14px; text-align: left; font-weight: 700;
   }
 }
+
+.stock-form,
+.stock-form .form-row,
+.stock-form .form-row > label,
+.stock-form .stock-date-field {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.stock-form .form-row {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.stock-form .stock-date-field {
+  width: 100%;
+  overflow: hidden;
+}
+
+.stock-form .stock-date-field > span {
+  display: block;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  text-align: center;
+  font-size: 13px;
+}
+
+.stock-form .stock-date-field input[type="date"] {
+  width: 100%;
+  min-width: 0;
+}
