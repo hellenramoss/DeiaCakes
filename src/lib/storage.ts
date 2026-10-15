@@ -193,53 +193,35 @@ async function saveCustomerRemote(customer: Customer) {
 async function saveOrderRemote(order: Order) {
   if (!supabase) throw new Error("Supabase não configurado.");
 
-  const { error: orderError } = await supabase.from("orders").upsert({
-    id: order.id,
-    customer_id: order.customerId,
-    customer_name: order.customerName,
-    order_date: order.orderDate,
-    delivery_date: order.deliveryDate,
-    expected_payment_date: order.expectedPaymentDate || null,
-    status: order.status,
-    payment_status: order.paymentStatus,
-    notes: order.notes
+  const { error } = await supabase.rpc("save_deia_order", {
+    p_order: {
+      id: order.id,
+      customer_id: order.customerId,
+      customer_name: order.customerName,
+      order_date: order.orderDate,
+      delivery_date: order.deliveryDate,
+      expected_payment_date: order.expectedPaymentDate || null,
+      status: order.status,
+      payment_status: order.paymentStatus,
+      notes: order.notes
+    },
+    p_items: order.items.map(item => ({
+      id: item.id,
+      product_id: item.productId,
+      product_name: item.productName,
+      quantity: item.quantity,
+      unit_price: item.unitPrice,
+      ready_stock_quantity: item.readyStockQuantity ?? 0
+    })),
+    p_payments: order.payments.map(payment => ({
+      id: payment.id,
+      amount: payment.amount,
+      method: payment.method,
+      paid_at: payment.paidAt
+    }))
   });
 
-  if (orderError) throw orderError;
-
-  const { error: deleteItemsError } = await supabase.from("order_items").delete().eq("order_id", order.id);
-  if (deleteItemsError) throw deleteItemsError;
-
-  if (order.items.length) {
-    const { error: itemsError } = await supabase.from("order_items").insert(
-      order.items.map((item) => ({
-        id: item.id,
-        order_id: order.id,
-        product_id: item.productId,
-        product_name: item.productName,
-        quantity: item.quantity,
-        unit_price: item.unitPrice,
-        ready_stock_quantity: item.readyStockQuantity ?? 0
-      }))
-    );
-    if (itemsError) throw itemsError;
-  }
-
-  const { error: deletePaymentsError } = await supabase.from("payments").delete().eq("order_id", order.id);
-  if (deletePaymentsError) throw deletePaymentsError;
-
-  if (order.payments.length) {
-    const { error: paymentsError } = await supabase.from("payments").insert(
-      order.payments.map((payment) => ({
-        id: payment.id,
-        order_id: order.id,
-        amount: payment.amount,
-        method: payment.method,
-        paid_at: payment.paidAt
-      }))
-    );
-    if (paymentsError) throw paymentsError;
-  }
+  if (error) throw new Error(error.message);
 }
 
 async function removeOrderRemote(orderId: string) {
