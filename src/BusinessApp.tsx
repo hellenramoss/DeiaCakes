@@ -1455,36 +1455,49 @@ function OrderModal({
   );
   const [saving, setSaving] = useState(false);
 
+  function availableForProduct(productId: string, current: OrderItem[], exceptId = "") {
+    const original = order?.items
+      .filter(item => item.productId === productId)
+      .reduce((sum, item) => sum + (item.readyStockQuantity ?? 0), 0) ?? 0;
+    const selected = current
+      .filter(item => item.productId === productId && item.id !== exceptId)
+      .reduce((sum, item) => sum + (item.readyStockQuantity ?? 0), 0);
+    return Math.max(0, (stock[productId] ?? 0) + original - selected);
+  }
+
   function addItem() {
-    const first = products.find((product) => product.active);
+    const first = products.find(product => product.active);
     if (!first) return;
     const id = uid();
-    setItems((current) => [
+    setItems(current => [
       {
         id,
         productId: first.id,
         productName: first.name,
         quantity: 1,
         unitPrice: first.price,
-        readyStockQuantity: 0
+        readyStockQuantity: availableForProduct(first.id, current) > 0 ? 1 : 0
       },
       ...current
     ]);
-    setPriceInputs((current) => ({ ...current, [id]: formatCurrencyInput(first.price) }));
+    setPriceInputs(current => ({ ...current, [id]: formatCurrencyInput(first.price) }));
   }
 
   function changeProduct(itemId: string, productId: string) {
-    const product = products.find((item) => item.id === productId);
+    const product = products.find(item => item.id === productId);
     if (!product) return;
-
-    setItems((current) =>
-      current.map((item) =>
-        item.id === itemId
-          ? { ...item, productId: product.id, productName: product.name, unitPrice: product.price, readyStockQuantity: 0 }
-          : item
-      )
-    );
-    setPriceInputs((current) => ({ ...current, [itemId]: formatCurrencyInput(product.price) }));
+    setItems(current => current.map(item =>
+      item.id === itemId
+        ? {
+            ...item,
+            productId: product.id,
+            productName: product.name,
+            unitPrice: product.price,
+            readyStockQuantity: availableForProduct(productId, current, itemId) > 0 ? 1 : 0
+          }
+        : item
+    ));
+    setPriceInputs(current => ({ ...current, [itemId]: formatCurrencyInput(product.price) }));
   }
 
   function updateItem(itemId: string, changes: Partial<OrderItem>) {
@@ -1611,11 +1624,11 @@ function OrderModal({
               }} /></div></label>
               <button type="button" className="icon-button danger-button" onClick={() => deleteItem(item.id)}><Trash2 size={17} /></button>
               <label className="ready-order-field">
-                <span>Pronta-entrega ({Math.max(0, (stock[item.productId] ?? 0) + (order?.items.filter(old => old.productId === item.productId).reduce((sum, old) => sum + (old.readyStockQuantity ?? 0), 0) ?? 0))} disponíveis)</span>
+                <span>Pronta-entrega ({availableForProduct(item.productId, items, item.id)} disponíveis para este item)</span>
                 <select value={item.readyStockQuantity ?? 0} onChange={event => updateItem(item.id, { readyStockQuantity: Number(event.target.value) })}>
                   <option value={0}>Produzir para este pedido</option>
                   {Array.from({
-                    length: Math.min(item.quantity, Math.max(0, (stock[item.productId] ?? 0) + (order?.items.filter(old => old.productId === item.productId).reduce((sum, old) => sum + (old.readyStockQuantity ?? 0), 0) ?? 0)))
+                    length: Math.min(item.quantity, availableForProduct(item.productId, items, item.id))
                   }, (_, i) => i + 1).map(q => <option key={q} value={q}>Usar {q} da pronta-entrega</option>)}
                 </select>
               </label>
