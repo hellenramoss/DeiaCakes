@@ -1044,7 +1044,7 @@ function ReadyStockView({
   onSave: (product: Product, quantity: number, date: string, notes: string) => Promise<void>;
 }) {
   const [productId, setProductId] = useState("");
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState("1");
   const [date, setDate] = useState(isoToday());
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
@@ -1055,11 +1055,12 @@ function ReadyStockView({
 
   async function submit(event: FormEvent) {
     event.preventDefault();
-    if (!selected || !Number.isInteger(quantity) || quantity <= 0) return;
+    const amount = Number(quantity);
+    if (!selected || !quantity.trim() || !Number.isInteger(amount) || amount <= 0) return;
     setBusy(true);
     try {
-      await onSave(selected, quantity, date, notes);
-      setQuantity(1);
+      await onSave(selected, amount, date, notes);
+      setQuantity("1");
       setNotes("");
     } catch (error) {
       window.alert(error instanceof Error ? error.message : "Erro ao registrar produção.");
@@ -1087,11 +1088,11 @@ function ReadyStockView({
       <form className="form stock-form" onSubmit={submit}>
         <label><span>Produto</span><select required value={productId} onChange={event => setProductId(event.target.value)}><option value="">Selecione um produto</option>{products.filter(product => product.active).map(product => <option value={product.id} key={product.id}>{product.name}</option>)}</select></label>
         <div className="form-row">
-          <label><span>Quantidade</span><input type="number" min="1" step="1" value={quantity} onChange={event => setQuantity(Number(event.target.value))} required /></label>
+          <label><span>Quantidade</span><input type="text" inputMode="numeric" pattern="[0-9]*" value={quantity} onChange={event => setQuantity(event.target.value.replace(/[^0-9]/g, ""))} onFocus={event => event.currentTarget.select()} required /></label>
           <label><span>Data da produção</span><div className="compact-date-field stock-date-field"><span>{formatDate(date)}</span><input type="date" value={date} onChange={event => setDate(event.target.value)} required /></div></label>
         </div>
         <label><span>Observações (opcional)</span><input value={notes} onChange={event => setNotes(event.target.value)} placeholder="Ex.: levar para a escola" /></label>
-        <button className="primary-button" disabled={busy || !productId || !navigator.onLine}>{busy ? "Salvando..." : "+ Registrar produção"}</button>
+        <button className="primary-button" disabled={busy || !productId || !navigator.onLine || !quantity.trim() || Number(quantity) <= 0 || !Number.isSafeInteger(Number(quantity))}>{busy ? "Salvando..." : "+ Registrar produção"}</button>
         {!navigator.onLine && <small>Para evitar conflitos, a pronta-entrega exige internet.</small>}
       </form>
     </div>
