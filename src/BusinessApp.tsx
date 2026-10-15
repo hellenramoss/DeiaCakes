@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   PackageCheck,
   Plus,
+  Boxes,
   Search,
   ShoppingBag,
   Trash2,
@@ -29,6 +30,7 @@ import {
   syncPendingChanges
 } from "./lib/storage";
 import AppLoader from "./components/AppLoader";
+import { addStock, loadStock, stockByProduct, StockMovement } from "./lib/stock";
 import { notifyUpcomingDeliveries, showAppNotification } from "./lib/notifications";
 import {
   Customer,
@@ -41,7 +43,7 @@ import {
   Product
 } from "./types";
 
-type Tab = "inicio" | "pedidos" | "clientes" | "produtos" | "receber" | "producao";
+type Tab = "inicio" | "pedidos" | "clientes" | "produtos" | "receber" | "producao" | "pronta";
 
 const orderStatuses: OrderStatus[] = ["Encomendado", "Em produção", "Pronto", "Entregue", "Cancelado"];
 const paymentMethods: PaymentMethod[] = ["Pix", "Dinheiro", "Cartão", "Outro"];
@@ -101,6 +103,7 @@ export default function App({ logoSrc }: { logoSrc?: string }) {
   const [products, setProducts] = useState<Product[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [stock, setStock] = useState<StockMovement[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [productModal, setProductModal] = useState(false);
@@ -121,6 +124,7 @@ export default function App({ logoSrc }: { logoSrc?: string }) {
       setProducts(data.products);
       setCustomers(data.customers);
       setOrders(data.orders);
+      if (navigator.onLine) setStock(await loadStock());
       void notifyUpcomingDeliveries(data.orders);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Não foi possível carregar os dados.");
@@ -159,6 +163,7 @@ export default function App({ logoSrc }: { logoSrc?: string }) {
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "order_items" }, scheduleRefresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "payments" }, scheduleRefresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "ready_stock_movements" }, scheduleRefresh)
       .subscribe();
 
     return () => {
@@ -292,6 +297,7 @@ export default function App({ logoSrc }: { logoSrc?: string }) {
     [orders, currentMonth]
   );
 
+  const availableStock = stockByProduct(stock);
   const monthRevenue = monthOrders.reduce((sum, order) => sum + orderTotal(order), 0);
   const monthReceived = monthOrders.reduce((sum, order) => sum + amountPaid(order), 0);
   const totalDue = orders
@@ -306,7 +312,8 @@ export default function App({ logoSrc }: { logoSrc?: string }) {
     { id: "inicio" as Tab, label: "Início", icon: LayoutDashboard },
     { id: "pedidos" as Tab, label: "Pedidos", icon: ClipboardList },
     { id: "receber" as Tab, label: "A receber", icon: WalletCards },
-    { id: "producao" as Tab, label: "Produção", icon: PackageCheck },
+    { id: "producao" as Tab, label: "A produzir", icon: PackageCheck },
+    { id: "pronta" as Tab, label: "Pronta-entrega", icon: Boxes },
     { id: "clientes" as Tab, label: "Clientes", icon: UsersRound },
     { id: "produtos" as Tab, label: "Produtos", icon: ShoppingBag }
   ];
@@ -432,7 +439,12 @@ export default function App({ logoSrc }: { logoSrc?: string }) {
               <ReceivablesView orders={orders} onPayment={(order) => setPaymentOrder(order)} />
             )}
 
-            {tab === "producao" && <ProductionView orders={orders} />}
+            {tab === "producao" && <ProductionView orders={orders} stock={availableStock} />}
+            {tab === "pronta" && <ReadyStockView products={products} stock={stock} onSave={async (product, quantity, date, notes) => {
+              await addStock(product, quantity, date, notes);
+              await refresh();
+              notify("Pronta-entrega atualizada.");
+            }} />}
           </>
         )}
       </main>
@@ -482,6 +494,7 @@ export default function App({ logoSrc }: { logoSrc?: string }) {
         <OrderModal
           products={products}
           customers={customers}
+          stock={availableStock}
           order={editingOrder}
           onClose={() => {
             setOrderModal(false);
@@ -870,7 +883,7 @@ function ReceivablesView({
   );
 }
 
-function ProductionView({ orders }: { orders: Order[] }) {
+function ProductionView({ orders, stock }: { orders: Order[]; stock: Record<string, number> }) {
   const [date, setDate] = useState(isoToday());
 
   const pendingProduction = orders
@@ -892,7 +905,7 @@ function ProductionView({ orders }: { orders: Order[] }) {
       const current = items.get(item.productId);
       items.set(item.productId, {
         name: item.productName,
-        quantity: (current?.quantity ?? 0) + item.quantity
+        quantity: (current?.quantity ?? 0) + Math.max(0, item.quantity - (item.readyStockQuantity ?? 0))
       });
     });
   });
@@ -903,8 +916,8 @@ function ProductionView({ orders }: { orders: Order[] }) {
     <section>
       <PageHeader
         eyebrow="Organização da cozinha"
-        title="Produção"
-        subtitle="As quantidades são somadas automaticamente a partir das encomendas."
+        title="A produzir"
+        subtitle="O que ainda falta preparar para atender às encomendas."
       />
 
       <div className="panel production-pending-panel">
@@ -1329,12 +1342,14 @@ function CustomerModal({
 function OrderModal({
   products,
   customers,
+  stock,
   order,
   onClose,
   onSave
 }: {
   products: Product[];
   customers: Customer[];
+  stock: Record<string, number>;
   order: Order | null;
   onClose: () => void;
   onSave: (order: Order) => Promise<void>;
@@ -1361,7 +1376,8 @@ function OrderModal({
         productId: first.id,
         productName: first.name,
         quantity: 1,
-        unitPrice: first.price
+        unitPrice: first.price,
+        readyStockQuantity: 0
       },
       ...current
     ]);
@@ -1375,7 +1391,7 @@ function OrderModal({
     setItems((current) =>
       current.map((item) =>
         item.id === itemId
-          ? { ...item, productId: product.id, productName: product.name, unitPrice: product.price }
+          ? { ...item, productId: product.id, productName: product.name, unitPrice: product.price, readyStockQuantity: 0 }
           : item
       )
     );
