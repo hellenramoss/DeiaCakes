@@ -100,6 +100,7 @@ function badgeClass(value: string) {
 
 export default function App({ logoSrc }: { logoSrc?: string }) {
   const [tab, setTab] = useState<Tab>("inicio");
+  const [moreOpen, setMoreOpen] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -449,20 +450,24 @@ export default function App({ logoSrc }: { logoSrc?: string }) {
         )}
       </main>
 
+
+      {moreOpen && (
+        <div className="more-nav-panel">
+          <button type="button" onClick={() => { setTab("clientes"); setMoreOpen(false); }}>Clientes</button>
+          <button type="button" onClick={() => { setTab("produtos"); setMoreOpen(false); }}>Produtos</button>
+        </div>
+      )}
       <nav className="bottom-nav">
-        {menu.map((item) => {
+        {menu.filter(item => item.id !== "clientes" && item.id !== "produtos").map(item => {
           const Icon = item.icon;
-          return (
-            <button
-              key={item.id}
-              className={tab === item.id ? "bottom-item active" : "bottom-item"}
-              onClick={() => setTab(item.id)}
-            >
-              <Icon size={20} />
-              <span>{item.label}</span>
-            </button>
-          );
+          return <button key={item.id} className={tab === item.id ? "bottom-item active" : "bottom-item"}
+            onClick={() => { setTab(item.id); setMoreOpen(false); }}>
+            <Icon size={20} /><span>{item.label}</span>
+          </button>;
         })}
+        <button type="button" className={moreOpen || tab === "clientes" || tab === "produtos" ? "bottom-item active" : "bottom-item"} onClick={() => setMoreOpen(open => !open)}>
+          <UsersRound size={20} /><span>Mais</span>
+        </button>
       </nav>
 
       {productModal && (
@@ -883,7 +888,7 @@ function ReceivablesView({
   );
 }
 
-function ProductionView({ orders, stock }: { orders: Order[]; stock: Record<string, number> }) {
+function ProductionView({ orders }: { orders: Order[]; stock: Record<string, number> }) {
   const [date, setDate] = useState(isoToday());
 
   const pendingProduction = orders
