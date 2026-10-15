@@ -1023,6 +1023,83 @@ function ProductionView({ orders, stock }: { orders: Order[]; stock: Record<stri
   );
 }
 
+
+function ReadyStockView({
+  products, stock, onSave
+}: {
+  products: Product[];
+  stock: StockMovement[];
+  onSave: (product: Product, quantity: number, date: string, notes: string) => Promise<void>;
+}) {
+  const [productId, setProductId] = useState("");
+  const [quantity, setQuantity] = useState(1);
+  const [date, setDate] = useState(isoToday());
+  const [notes, setNotes] = useState("");
+  const [busy, setBusy] = useState(false);
+  const available = stockByProduct(stock);
+  const selected = products.find(item => item.id === productId);
+  const stocked = products.filter(item => (available[item.id] ?? 0) > 0);
+  const history = stock.filter(item => item.kind !== "order").slice(0, 12);
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    if (!selected || !Number.isInteger(quantity) || quantity <= 0) return;
+    setBusy(true);
+    try {
+      await onSave(selected, quantity, date, notes);
+      setQuantity(1);
+      setNotes("");
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "Erro ao registrar produção.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function lowerStock(product: Product) {
+    const count = Number(window.prompt("Quantas unidades deseja baixar?", "1"));
+    if (!Number.isInteger(count) || count <= 0) return;
+    const reason = window.prompt("Motivo da baixa:", "Perda");
+    if (reason === null) return;
+    try {
+      await onSave(product, -count, isoToday(), reason);
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "Não foi possível dar baixa.");
+    }
+  }
+
+  return <section>
+    <PageHeader eyebrow="Produtos já preparados" title="Pronta-entrega" subtitle="Registre o que foi feito sem encomenda. Ao vender, escolha usar as unidades disponíveis." />
+    <div className="panel ready-stock-panel">
+      <div className="panel-title"><div><h2>Registrar produção</h2><p>Sem precisar criar um pedido.</p></div><Boxes size={22} /></div>
+      <form className="form stock-form" onSubmit={submit}>
+        <label><span>Produto</span><select required value={productId} onChange={event => setProductId(event.target.value)}><option value="">Selecione um produto</option>{products.filter(product => product.active).map(product => <option value={product.id} key={product.id}>{product.name}</option>)}</select></label>
+        <div className="form-row">
+          <label><span>Quantidade</span><input type="number" min="1" step="1" value={quantity} onChange={event => setQuantity(Number(event.target.value))} required /></label>
+          <label><span>Data da produção</span><input type="date" value={date} onChange={event => setDate(event.target.value)} required /></label>
+        </div>
+        <label><span>Observações (opcional)</span><input value={notes} onChange={event => setNotes(event.target.value)} placeholder="Ex.: levar para a escola" /></label>
+        <button className="primary-button" disabled={busy || !productId || !navigator.onLine}>{busy ? "Salvando..." : "+ Registrar produção"}</button>
+        {!navigator.onLine && <small>Para evitar conflitos, a pronta-entrega exige internet.</small>}
+      </form>
+    </div>
+    <div className="panel ready-stock-panel">
+      <div className="panel-title"><div><h2>Disponíveis para venda</h2><p>{stocked.reduce((sum, product) => sum + available[product.id], 0)} unidade(s) prontas.</p></div><ShoppingBag size={22} /></div>
+      {stocked.length === 0 ? <Empty text="Nenhum produto pronto no momento." /> :
+        <div className="ready-stock-list">{stocked.map(product => <div key={product.id} className="ready-stock-card">
+          <div><strong>{product.name}</strong><span>{available[product.id]} disponíveis</span></div>
+          <button type="button" className="secondary-button" onClick={() => lowerStock(product)}>Baixar</button>
+        </div>)}</div>}
+    </div>
+    {history.length > 0 && <div className="panel ready-stock-panel">
+      <div className="panel-title"><div><h2>Últimos registros</h2><p>Produções e ajustes manuais.</p></div></div>
+      <div className="ready-stock-list">{history.map(item => <div className="ready-stock-card" key={item.id}>
+        <div><strong>{item.productName}</strong><span>{formatDate(item.date)} · {item.quantity > 0 ? "+" : ""}{item.quantity} un. {item.notes}</span></div>
+      </div>)}</div>
+    </div>}
+  </section>;
+}
+
 function PageHeader({
   eyebrow,
   title,
