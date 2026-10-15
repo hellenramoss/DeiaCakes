@@ -1491,6 +1491,14 @@ function OrderModal({
   async function submit(event: FormEvent) {
     event.preventDefault();
     const customer = customers.find((item) => item.id === customerId);
+    if (items.some(item => (item.readyStockQuantity ?? 0) > 0) && !navigator.onLine) {
+      window.alert("Conecte-se à internet para utilizar a pronta-entrega.");
+      return;
+    }
+    if (items.some(item => (item.readyStockQuantity ?? 0) > item.quantity)) {
+      window.alert("O uso da pronta-entrega não pode ultrapassar a quantidade do item.");
+      return;
+    }
     if (!customer || items.length === 0) return;
 
     setSaving(true);
@@ -1590,6 +1598,15 @@ function OrderModal({
                 setPriceInputs((current) => ({ ...current, [item.id]: formatCurrencyInput(item.unitPrice) }));
               }} /></div></label>
               <button type="button" className="icon-button danger-button" onClick={() => deleteItem(item.id)}><Trash2 size={17} /></button>
+              <label className="ready-order-field">
+                <span>Pronta-entrega ({Math.max(0, (stock[item.productId] ?? 0) + (order?.items.filter(old => old.productId === item.productId).reduce((sum, old) => sum + (old.readyStockQuantity ?? 0), 0) ?? 0))} disponíveis)</span>
+                <select value={item.readyStockQuantity ?? 0} onChange={event => updateItem(item.id, { readyStockQuantity: Number(event.target.value) })}>
+                  <option value={0}>Produzir para este pedido</option>
+                  {Array.from({
+                    length: Math.min(item.quantity, Math.max(0, (stock[item.productId] ?? 0) + (order?.items.filter(old => old.productId === item.productId).reduce((sum, old) => sum + (old.readyStockQuantity ?? 0), 0) ?? 0)))
+                  }, (_, i) => i + 1).map(q => <option key={q} value={q}>Usar {q} da pronta-entrega</option>)}
+                </select>
+              </label>
             </div>
           ))}
           {items.length === 0 && <div className="empty small">Adicione pelo menos um produto.</div>}
