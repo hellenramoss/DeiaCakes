@@ -1088,7 +1088,7 @@ function ReadyStockView({
         <label><span>Produto</span><select required value={productId} onChange={event => setProductId(event.target.value)}><option value="">Selecione um produto</option>{products.filter(product => product.active).map(product => <option value={product.id} key={product.id}>{product.name}</option>)}</select></label>
         <div className="form-row">
           <label><span>Quantidade</span><input type="number" min="1" step="1" value={quantity} onChange={event => setQuantity(Number(event.target.value))} required /></label>
-          <label><span>Data da produção</span><input type="date" value={date} onChange={event => setDate(event.target.value)} required /></label>
+          <label><span>Data da produção</span><div className="compact-date-field stock-date-field"><span>{formatDate(date)}</span><input type="date" value={date} onChange={event => setDate(event.target.value)} required /></div></label>
         </div>
         <label><span>Observações (opcional)</span><input value={notes} onChange={event => setNotes(event.target.value)} placeholder="Ex.: levar para a escola" /></label>
         <button className="primary-button" disabled={busy || !productId || !navigator.onLine}>{busy ? "Salvando..." : "+ Registrar produção"}</button>
