@@ -26,6 +26,7 @@ export type OrderItem = {
   productName: string;
   quantity: number;
   unitPrice: number;
+  readyStockQuantity?: number;
 };
 
 export type Payment = {
