@@ -462,7 +462,7 @@ export default function App({ logoSrc }: { logoSrc?: string }) {
           const Icon = item.icon;
           return <button key={item.id} className={tab === item.id ? "bottom-item active" : "bottom-item"}
             onClick={() => { setTab(item.id); setMoreOpen(false); }}>
-            <Icon size={20} /><span>{item.label}</span>
+            <Icon size={20} /><span>{item.id === "pronta" ? "Prontos" : item.label}</span>
           </button>;
         })}
         <button type="button" className={moreOpen || tab === "clientes" || tab === "produtos" ? "bottom-item active" : "bottom-item"} onClick={() => setMoreOpen(open => !open)}>
@@ -892,7 +892,10 @@ function ProductionView({ orders }: { orders: Order[]; stock: Record<string, num
   const [date, setDate] = useState(isoToday());
 
   const pendingProduction = orders
-    .filter((order) => order.status === "Encomendado" || order.status === "Em produção")
+    .filter((order) =>
+      (order.status === "Encomendado" || order.status === "Em produção") &&
+      order.items.some(item => item.quantity > (item.readyStockQuantity ?? 0))
+    )
     .sort((a, b) => a.deliveryDate.localeCompare(b.deliveryDate));
 
   const pendingByDate = pendingProduction.reduce<Record<string, Order[]>>((groups, order) => {
